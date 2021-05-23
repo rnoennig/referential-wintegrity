@@ -13,7 +13,6 @@ public class Table {
 	List<TableRow> data;
 	String[] columnNames;
 	private String tableName;
-	private String[] primaryKeyColumns;
 	private TableDefinition tableDefinition;
 
 	public List<TableRow> getTableRows() {
@@ -47,15 +46,6 @@ public class Table {
 
 	public int getColumnCount() {
 		return this.columnNames.length;
-	}
-
-	public void setPrimaryKeyColumns(String[] primaryKeyColumns) {
-		this.primaryKeyColumns = primaryKeyColumns;
-	}
-
-	// TODO should move to tabledefinition
-	public String[] getPrimaryKeys() {
-		return this.primaryKeyColumns;
 	}
 
 	@Override

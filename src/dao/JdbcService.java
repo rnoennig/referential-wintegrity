@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -123,8 +124,11 @@ public class JdbcService {
 		visitedRows.add(startRow);
 		
 		TableDefinition tableDefinition = schema.getTableDefinitionByName(startRow.getTableName()).get();
-		PrimaryKey primaryKey = tableDefinition.getPrimaryKey();
-		List<ForeignKey> referencingForeignKeys = primaryKey.getReferencingForeignKeys();
+		Optional<PrimaryKey> primaryKey = tableDefinition.getPrimaryKey();
+		if (primaryKey.isEmpty()) {
+			return;
+		}
+		List<ForeignKey> referencingForeignKeys = primaryKey.get().getReferencingForeignKeys();
 		// TODO in theory there could be a table A that references a table B with more
 		// than one foreign key, this needs to be handled here if that actually happens
 		for (ForeignKey referencingForeignKey : referencingForeignKeys) {
@@ -203,7 +207,6 @@ public class JdbcService {
 		table.setTableDefinition(tableDefinition);
 		table.setTableName(tableName);
 		table.setColumnNames(columnDefinitions.stream().map(cd -> cd.getColumnName()).toArray(String[]::new));
-		table.setPrimaryKeyColumns(tableDefinition.getPrimaryKey().getColumnDefinitions().stream().map(cd -> cd.getColumnName()).toArray(String[]::new));
 		table.setData(rows);
 
 		return table;
@@ -295,7 +298,7 @@ public class JdbcService {
 //					String datatype = columns.getString("DATA_TYPE");
 //					String isNullable = columns.getString("IS_NULLABLE");
 //					String isAutoIncrement = columns.getString("IS_AUTOINCREMENT");
-					columnDefinitions.add(new ColumnDefinition(schema.getTableDefinitionByName(tableName).get(), columnName));
+					columnDefinitions.add(new ColumnDefinition(schema.addTable(tableName), columnName));
 				}
 				schema.getTableDefinitionByName(tableName).get().setColumnDefinitions(columnDefinitions);
 			}

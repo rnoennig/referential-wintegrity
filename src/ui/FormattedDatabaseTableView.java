@@ -18,6 +18,9 @@ public class FormattedDatabaseTableView extends TableView {
 		super(table);
 
 		TableDefinition tableDefinition = table.getTableDefinition();
+		if (!tableDefinition.hasPrimaryKey()) {
+			return;
+		}
 		List<Integer> pkIndexes = tableDefinition.getPrimaryKeyColumnIndexes();
 
 		jTable.getTableHeader().setDefaultRenderer(createPrimaryKeyCellRenderer(

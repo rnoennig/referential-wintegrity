@@ -1,6 +1,7 @@
 package ui;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.BoxLayout;
@@ -15,6 +16,7 @@ import javax.swing.SwingWorker;
 import dao.JdbcService;
 import domain.Table;
 import domain.TableRow;
+import domain.ri.PrimaryKey;
 import domain.ri.Schema;
 
 public class Main {
@@ -136,8 +138,13 @@ public class Main {
 					tableView.addClicklistener(new ClickAdapter() {
 						@Override
 						public void cellSelected(TableRow row, String cellValue) {
-							String tabTitle = tableName + "#" + row.getTable().getPrimaryKeys()[0] + "="
-									+ row.getColumnValue(row.getTable().getPrimaryKeys()[0]);
+							Optional<PrimaryKey> primaryKey = row.getTable().getTableDefinition().getPrimaryKey();
+							if (primaryKey.isEmpty()) {
+								//TODO show some kind of error message, that no PK is defined?
+								return;
+							}
+							String tabTitle = tableName + "#" + primaryKey.get().getColumnDefinitions() + "="
+									+ row.getColumnValues(primaryKey.get().getColumnDefinitions());
 							JPanel panel = addTab(tabPane, tabTitle);
 							addDependentRowsTableViews(panel, row);
 						}

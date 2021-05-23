@@ -2,7 +2,12 @@ package domain;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import domain.ri.ColumnDefinition;
+import domain.ri.PrimaryKey;
+import domain.ri.TableDefinition;
 
 /**
  * Represents a record originating from a database table row 
@@ -71,15 +76,22 @@ public class TableRow {
 	
 	@Override
 	public String toString() {
-		String[] primaryKeys = getTable().getPrimaryKeys();
+		TableDefinition tableDefinition = this.table.getTableDefinition();
+		Optional<PrimaryKey> primaryKey = tableDefinition.getPrimaryKey();
 		String tableName = getTable().getTableName();
-		String pkNames = Arrays.stream(primaryKeys).collect(Collectors.joining(","));
-		String pkValues = Arrays.stream(primaryKeys).map(col -> getColumnValue(col)).collect(Collectors.joining(","));
-		return "["+tableName+":"+pkNames+"="+pkValues+"]";
+		if (primaryKey.isPresent()) {
+			List<ColumnDefinition> pkColDefs = primaryKey.get().getColumnDefinitions();
+			return "["+tableName+":"+pkColDefs+"="+getColumnValues(pkColDefs)+"]";
+		}
+		return "["+tableName+": row #"+table.getTableRows().indexOf(this)+"]";
 	}
 
 	public String getColumnValue(int i) {
 		return values[i];
+	}
+
+	public List<String> getColumnValues(List<ColumnDefinition> columnDefinitions) {
+		return columnDefinitions.stream().map(cd -> getColumnValue(cd.getColumnName())).collect(Collectors.toList());
 	}
 	
 }
