@@ -42,6 +42,7 @@ public class Main {
 
         JSplitPane eastWestPanel = new JSplitPane();
         eastWestPanel.setDividerSize(3);
+        eastWestPanel.setDividerLocation(150);
         frame.add(eastWestPanel);
         
         JTabbedPane tabPane = new JTabbedPane();
@@ -131,15 +132,13 @@ public class Main {
 	 * @param tabPane
 	 * @param tabTitle
 	 * @param component
-	 * @return 
+	 * @return a panel to add components to which will make up the scrollable tab pane's content
 	 */
 	protected JPanel addTab(JTabbedPane tabPane, String tabTitle) {
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		JScrollPane scrollpane = new JScrollPane(panel);
 		tabPane.addTab(tabTitle, scrollpane);
-		
-//		panel.validate();
 		return panel;
 	}
 
