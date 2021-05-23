@@ -2,10 +2,7 @@ package domain.ri;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-
-import domain.Table;
-import domain.TableRow;
+import java.util.stream.Collectors;
 
 public class TableDefinition {
 	private Schema schema;
@@ -78,5 +75,9 @@ public class TableDefinition {
 			TableDefinition tableDefinitionByName = schema.getTableDefinitionByName(pkTableName).get();
 			tableDefinitionByName.acceptForeignKeyVisitor(schemaVisitor);
 		}
+	}
+
+	public List<Integer> getPrimaryKeyColumnIndexes() {
+		return primaryKey.getColumnDefinitions().stream().map(c -> this.columnDefinitions.indexOf(c)).collect(Collectors.toList());
 	}
 }

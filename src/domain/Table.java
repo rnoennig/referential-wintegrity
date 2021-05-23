@@ -2,6 +2,8 @@ package domain;
 
 import java.util.List;
 
+import domain.ri.TableDefinition;
+
 /**
  * Represents a set of {@link TableRow}s
  * @author wiesel
@@ -12,6 +14,7 @@ public class Table {
 	String[] columnNames;
 	private String tableName;
 	private String[] primaryKeyColumns;
+	private TableDefinition tableDefinition;
 
 	public List<TableRow> getTableRows() {
 		return data;
@@ -78,5 +81,13 @@ public class Table {
 		} else if (!tableName.equals(other.tableName))
 			return false;
 		return true;
+	}
+
+	public TableDefinition getTableDefinition() {
+		return this.tableDefinition;
+	}
+
+	public void setTableDefinition(TableDefinition tableDefinition) {
+		this.tableDefinition = tableDefinition;
 	}
 }

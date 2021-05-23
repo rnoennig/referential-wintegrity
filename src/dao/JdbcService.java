@@ -200,6 +200,7 @@ public class JdbcService {
 			rows.add(new TableRow(table, row));
 		}
 
+		table.setTableDefinition(tableDefinition);
 		table.setTableName(tableName);
 		table.setColumnNames(columnDefinitions.stream().map(cd -> cd.getColumnName()).toArray(String[]::new));
 		table.setPrimaryKeyColumns(tableDefinition.getPrimaryKey().getColumnDefinitions().stream().map(cd -> cd.getColumnName()).toArray(String[]::new));

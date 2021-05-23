@@ -4,16 +4,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import domain.ri.TableDefinition;
-
 /**
  * Represents a record originating from a database table row 
  *
  */
 public class TableRow {
 	private Table table;
-	
-	private TableDefinition tableDefinition;
 	
 	private String[] values;
 	public TableRow(Table table, List<String> values) {

@@ -101,7 +101,7 @@ public class Main {
 	 * @return a view with all rows of the given table
 	 */
 	protected TableView createRowSelectionView(JTabbedPane tabPane, String tableName) {
-		TableView tableView = new TableView(this.jdbcProvider.getTableRows(tableName));
+		TableView tableView = new FormattedDatabaseTableView(this.jdbcProvider.getTableRows(tableName));
 		tableView.addClicklistener(new ClickAdapter() {
         	@Override
         	public void cellSelected(TableRow row, String cellValue) {
@@ -123,7 +123,7 @@ public class Main {
 		List<Table> dependentRows = this.jdbcProvider.getDependentRows(row);
 		
 		for (Table dependentTables : dependentRows) {
-			panel.add(new TableView(dependentTables));
+			panel.add(new FormattedDatabaseTableView(dependentTables));
 		}
 	}
 

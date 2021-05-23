@@ -20,6 +20,7 @@ import domain.Table;
 public class TableView extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private List<ClickAdapter> clickAdapters = new LinkedList<>();
+	protected JTable jTable;
 
 	public TableView(Table table) {
 		super();
@@ -53,11 +54,12 @@ public class TableView extends JPanel {
 				return table.getColumnNames()[column];
 			}
 		};
-		
-		JTable jTable = new JTable(dm);
+
+		jTable = new JTable(dm);
 		jTable.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
+				// must be a double click
 				if (e.getClickCount() < 2) {
 					return;
 				}
@@ -69,21 +71,23 @@ public class TableView extends JPanel {
 			}
 		});
 		
+		// if the table doesn't specify a preferred scrollable viewport size the default
+		// scrollpane size is larger than the table
 		int numOfVisibleRows = table.getRowCount();
 		int cols = jTable.getColumnModel().getTotalColumnWidth();
 		int rows = jTable.getRowHeight() * numOfVisibleRows;
-		Dimension d = new Dimension( cols, rows );
-		jTable.setPreferredScrollableViewportSize( d );
-		
+		Dimension d = new Dimension(cols, rows);
+		jTable.setPreferredScrollableViewportSize(d);
+
 		JScrollPane scrollPane = new JScrollPane(jTable) {
 			private static final long serialVersionUID = 1L;
 
 			/**
-			 * scrollpane should be small if the content is small otherwise have a max height
+			 * scrollpane should be small if the content is small otherwise have a max
+			 * height
 			 */
 			@Override
 			public Dimension getMaximumSize() {
-				System.out.println("tableview getMaximumSize");
 				int maxHeight = 200;
 				// 10000 means grab as much width as possible
 				return new Dimension(10000, Math.min(getPreferredSize().height, maxHeight));

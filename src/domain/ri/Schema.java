@@ -5,9 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import domain.Table;
-import domain.TableRow;
-
 public class Schema {
 	
 	Map<String, TableDefinition> tableDefinitionsByTableName = new HashMap<>();
