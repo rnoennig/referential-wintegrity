@@ -1,5 +1,7 @@
 package ui;
+
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.BoxLayout;
 import javax.swing.JComponent;
@@ -24,7 +26,7 @@ public class Main {
 	}
 
 	private JdbcService jdbcProvider;
-	
+
 	public JdbcService getJdbcProvider() {
 		return jdbcProvider;
 	}
@@ -36,81 +38,118 @@ public class Main {
 	private void run() {
 		JFrame frame = new JFrame("Referential Wintegrity");
 
-        frame.setSize(800, 600);
-        frame.setLocationRelativeTo(null);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setSize(800, 600);
+		frame.setLocationRelativeTo(null);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        JSplitPane eastWestPanel = new JSplitPane();
-        eastWestPanel.setDividerSize(3);
-        eastWestPanel.setDividerLocation(150);
-        frame.add(eastWestPanel);
-        
-        JTabbedPane tabPane = new JTabbedPane();
-        
-        TableView allTablesView = createTableSelectionView(tabPane);
-        eastWestPanel.setLeftComponent(allTablesView);
-        
-		
-        eastWestPanel.setRightComponent(tabPane);
-        
-        SwingWorker<Schema, Void> swingWorker = new SwingWorker<Schema, Void>() {
+		JSplitPane eastWestPanel = new JSplitPane();
+		eastWestPanel.setDividerSize(3);
+		frame.add(eastWestPanel);
+
+		JTabbedPane tabPane = new JTabbedPane();
+
+		createTableSelectionView(tabPane, eastWestPanel);
+
+		eastWestPanel.setRightComponent(tabPane);
+
+		SwingWorker<Schema, Void> swingWorker = new SwingWorker<Schema, Void>() {
 
 			@Override
 			protected Schema doInBackground() throws Exception {
 				return Main.this.jdbcProvider.readSchemaGraph();
 			}
-			
+
 			@Override
 			protected void done() {
 				// DEMO
-		        //TableRow row = jdbcProvider.selectRows("child", "select * from child where id = 16").getTableRows().get(0);
-		        TableRow row = jdbcProvider.selectRows("greatgrandparent", "select * from greatgrandparent where id = 1").getTableRows().get(0);
-		        JPanel panel = addTab(tabPane, "TEST");
-		        addDependentRowsTableViews(panel, row);
-		        // DEMO
+				// TableRow row = jdbcProvider.selectRows("child", "select * from child where id
+				// = 16").getTableRows().get(0);
+				TableRow row = jdbcProvider
+						.selectRows("greatgrandparent", "select * from greatgrandparent where id = 1").getTableRows()
+						.get(0);
+				JPanel panel = addTab(tabPane, "TEST");
+				addDependentRowsTableViews(panel, row);
+				// DEMO
 			}
-        };
-        swingWorker.execute();
-        
+		};
+		swingWorker.execute();
 
-        frame.setVisible(true);
+		frame.setVisible(true);
 	}
 
 	/**
 	 * 
 	 * @param tabPane
+	 * @param eastWestPanel
 	 * @return a view with all tables
 	 */
-	protected TableView createTableSelectionView(JTabbedPane tabPane) {
-		TableView allTablesView = new TableView(this.jdbcProvider.getTables());
-        allTablesView.addClicklistener(new ClickAdapter() {
-        	@Override
-        	public void cellSelected(TableRow row, String cellValue) {
-        		String tableName = cellValue;
-        		JPanel panel = addTab(tabPane, tableName);
-        		panel.add(createRowSelectionView(tabPane, tableName));
-        	}
-        });
-		return allTablesView;
+	protected void createTableSelectionView(JTabbedPane tabPane, JSplitPane eastWestPanel) {
+		SwingWorker<Table, Void> swingWorker = new SwingWorker<Table, Void>() {
+			@Override
+			protected Table doInBackground() throws Exception {
+				return Main.this.jdbcProvider.getTables();
+			}
+
+			@Override
+			protected void done() {
+				try {
+					TableView allTablesView;
+					allTablesView = new TableView(get());
+					allTablesView.addClicklistener(new ClickAdapter() {
+						@Override
+						public void cellSelected(TableRow row, String cellValue) {
+							String tableName = cellValue;
+							JPanel panel = addTab(tabPane, tableName);
+							createRowSelectionView(tabPane, tableName, panel);
+						}
+					});
+					eastWestPanel.setLeftComponent(allTablesView);
+					eastWestPanel.setDividerLocation(150);
+				} catch (InterruptedException | ExecutionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		};
+		swingWorker.execute();
 	}
-	
+
 	/**
 	 * 
 	 * @param tabPane
 	 * @param tableName
+	 * @param panel
 	 * @return a view with all rows of the given table
 	 */
-	protected TableView createRowSelectionView(JTabbedPane tabPane, String tableName) {
-		TableView tableView = new FormattedDatabaseTableView(this.jdbcProvider.getTableRows(tableName));
-		tableView.addClicklistener(new ClickAdapter() {
-        	@Override
-        	public void cellSelected(TableRow row, String cellValue) {
-        		String tabTitle = tableName + "#" + row.getTable().getPrimaryKeys()[0] + "=" + row.getColumnValue(row.getTable().getPrimaryKeys()[0]);
-        		JPanel panel = addTab(tabPane, tabTitle);
-				addDependentRowsTableViews(panel, row);
-        	}
-        });
-		return tableView;
+	protected void createRowSelectionView(JTabbedPane tabPane, String tableName, JPanel panel) {
+		SwingWorker<Table, Void> swingWorker = new SwingWorker<Table, Void>() {
+			@Override
+			protected Table doInBackground() throws Exception {
+				return Main.this.jdbcProvider.getTableRows(tableName);
+			}
+
+			@Override
+			protected void done() {
+				try {
+					TableView tableView;
+					tableView = new FormattedDatabaseTableView(get());
+					tableView.addClicklistener(new ClickAdapter() {
+						@Override
+						public void cellSelected(TableRow row, String cellValue) {
+							String tabTitle = tableName + "#" + row.getTable().getPrimaryKeys()[0] + "="
+									+ row.getColumnValue(row.getTable().getPrimaryKeys()[0]);
+							JPanel panel = addTab(tabPane, tabTitle);
+							addDependentRowsTableViews(panel, row);
+						}
+					});
+					panel.add(tableView);
+				} catch (InterruptedException | ExecutionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		};
+		swingWorker.execute();
 	}
 
 	/**
@@ -121,7 +160,7 @@ public class Main {
 	 */
 	protected void addDependentRowsTableViews(JComponent panel, TableRow row) {
 		List<Table> dependentRows = this.jdbcProvider.getDependentRows(row);
-		
+
 		for (Table dependentTables : dependentRows) {
 			panel.add(new FormattedDatabaseTableView(dependentTables));
 		}
@@ -129,10 +168,12 @@ public class Main {
 
 	/**
 	 * adds a new tab to the tab pane
+	 * 
 	 * @param tabPane
 	 * @param tabTitle
 	 * @param component
-	 * @return a panel to add components to which will make up the scrollable tab pane's content
+	 * @return a panel to add components to which will make up the scrollable tab
+	 *         pane's content
 	 */
 	protected JPanel addTab(JTabbedPane tabPane, String tabTitle) {
 		JPanel panel = new JPanel();
