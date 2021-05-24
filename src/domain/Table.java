@@ -2,24 +2,21 @@ package domain;
 
 import java.util.List;
 
-import domain.ri.TableDefinition;
-
 /**
  * Represents a set of {@link TableRow}s
  * @author wiesel
  *
  */
 public class Table {
-	List<TableRow> data;
+	List<? extends TableRow> data;
+	List<TableCell> header;
 	String[] columnNames;
 	private String tableName;
-	private TableDefinition tableDefinition;
-
-	public List<TableRow> getTableRows() {
+	public List<? extends TableRow> getTableRows() {
 		return data;
 	}
 
-	public Table setData(List<TableRow> data) {
+	public Table setData(List<? extends TableRow> data) {
 		this.data = data;
 		return this;
 	}
@@ -73,11 +70,11 @@ public class Table {
 		return true;
 	}
 
-	public TableDefinition getTableDefinition() {
-		return this.tableDefinition;
+	public List<TableCell> getTableHeader() {
+		return header;
 	}
 
-	public void setTableDefinition(TableDefinition tableDefinition) {
-		this.tableDefinition = tableDefinition;
+	public void setHeader(List<TableCell> header) {
+		this.header = header;
 	}
 }

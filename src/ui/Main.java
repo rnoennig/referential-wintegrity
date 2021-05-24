@@ -1,5 +1,6 @@
 package ui;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -14,7 +15,10 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingWorker;
 
 import dao.JdbcService;
+import domain.DatabaseTable;
+import domain.DatabaseTableRow;
 import domain.Table;
+import domain.TableCell;
 import domain.TableRow;
 import domain.ri.PrimaryKey;
 import domain.ri.Schema;
@@ -64,16 +68,14 @@ public class Main {
 			@Override
 			protected void done() {
 				// DEMO
-				// TableRow row = jdbcProvider.selectRows("child", "select * from child where id
-				// = 16").getTableRows().get(0);
 				try {
 					get();
 				} catch (InterruptedException | ExecutionException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				TableRow row = jdbcProvider
-						.selectRows("greatgrandparent", "select * from greatgrandparent where id = 1").getTableRows()
+				DatabaseTableRow row = jdbcProvider
+						.selectRows("greatgrandparent", Arrays.asList("id"),Arrays.asList(1)).getTableRows()
 						.get(0);
 				JPanel panel = addTab(tabPane, "TEST");
 				addDependentRowsTableViews(panel, row);
@@ -105,8 +107,8 @@ public class Main {
 					allTablesView = new TableView(get());
 					allTablesView.addClicklistener(new ClickAdapter() {
 						@Override
-						public void cellSelected(TableRow row, String cellValue) {
-							String tableName = cellValue;
+						public void cellSelected(TableRow row, TableCell cell) {
+							String tableName = cell.getValue().toString();
 							JPanel panel = addTab(tabPane, tableName);
 							createRowSelectionView(tabPane, tableName, panel);
 						}
@@ -130,30 +132,31 @@ public class Main {
 	 * @return a view with all rows of the given table
 	 */
 	protected void createRowSelectionView(JTabbedPane tabPane, String tableName, JPanel panel) {
-		SwingWorker<Table, Void> swingWorker = new SwingWorker<Table, Void>() {
+		SwingWorker<DatabaseTable, Void> swingWorker = new SwingWorker<DatabaseTable, Void>() {
 			@Override
-			protected Table doInBackground() throws Exception {
+			protected DatabaseTable doInBackground() throws Exception {
 				return Main.this.jdbcProvider.getTableRows(tableName);
 			}
 
 			@Override
 			protected void done() {
 				try {
-					TableView tableView;
-					tableView = new FormattedDatabaseTableView(get());
+					TableView tableView = new DatabaseTableView(get());
 					tableView.addClicklistener(new ClickAdapter() {
 						@Override
-						public void cellSelected(TableRow row, String cellValue) {
-							Optional<PrimaryKey> primaryKey = row.getTable().getTableDefinition().getPrimaryKey();
+						public void cellSelected(TableRow row, TableCell cell) {
+							// FIXME check unique constraints too, not only primary keys
+							Optional<PrimaryKey> primaryKey = ((DatabaseTable)row.getTable()).getTableDefinition().getPrimaryKey();
 							if (primaryKey.isEmpty()) {
-								//TODO show some kind of error message, that no PK is defined?
+								// TODO show some kind of error message, that no PK is defined?
+								System.err.println("Cannot open dependend[ent|ing] rows because no primary key was found");
 								return;
 							}
 							String tabTitle = tableName + "#" + primaryKey.get().getColumnDefinitions() + "="
 									+ row.getColumnValues(primaryKey.get().getColumnDefinitions());
 							JPanel panel = addTab(tabPane, tabTitle);
 							// FIXME when this is selected then the original jtable loses all but the selected row 
-							addDependentRowsTableViews(panel, row);
+							addDependentRowsTableViews(panel, (DatabaseTableRow)row);
 						}
 					});
 					panel.add(tableView);
@@ -172,11 +175,11 @@ public class Main {
 	 * @param row
 	 * @return a panel with all table and all dependant rows for the given row
 	 */
-	protected void addDependentRowsTableViews(JComponent panel, TableRow row) {
-		List<Table> dependentRows = this.jdbcProvider.getDependentRows(row);
+	protected void addDependentRowsTableViews(JComponent panel, DatabaseTableRow row) {
+		List<DatabaseTable> dependentRows = this.jdbcProvider.getDependentRows(row);
 
-		for (Table dependentTables : dependentRows) {
-			panel.add(new FormattedDatabaseTableView(dependentTables));
+		for (DatabaseTable dependentTables : dependentRows) {
+			panel.add(new DatabaseTableView(dependentTables));
 		}
 	}
 

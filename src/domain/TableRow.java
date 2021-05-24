@@ -2,24 +2,21 @@ package domain;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import domain.ri.ColumnDefinition;
-import domain.ri.PrimaryKey;
-import domain.ri.TableDefinition;
 
 /**
  * Represents a record originating from a database table row 
  *
  */
 public class TableRow {
-	private Table table;
+	protected Table table;
 	
-	private Object[] values;
-	public TableRow(Table table, List<Object> row) {
+	private List<? extends TableCell> values;
+	public TableRow(Table table, List<? extends TableCell> values) {
 		this.table = table;
-		this.values = row.toArray();
+		this.values = values;
 	}
 	
 	public String getTableName() {
@@ -33,17 +30,32 @@ public class TableRow {
 		this.table = table;
 	}
 
-	public Object[] getValues() {
+	public List<? extends TableCell> getValues() {
 		return values;
 	}
-	public void setValues(Object[] values) {
+	public void setValues(List<TableCell> values) {
 		this.values = values;
 	}
 
 	public Object getColumnValue(String columnName) {
 		List<String> columnNames = Arrays.stream(this.table.getColumnNames()).map(x -> x.toLowerCase()).collect(Collectors.toList());
 		int columnIndex = columnNames.indexOf(columnName.toLowerCase());
-		return this.values[columnIndex];
+		return this.values.get(columnIndex).getValue();
+	}
+
+	public Object getColumnValue(int i) {
+		return values.get(i).getValue();
+	}
+
+	public List<Object> getColumnValues(List<ColumnDefinition> columnDefinitions) {
+		return columnDefinitions.stream().map(cd -> getColumnValue(cd.getColumnName())).collect(Collectors.toList());
+	}
+	
+	@Override
+	public String toString() {
+		String tableName = getTable().getTableName();
+		int rowIndex = table.getTableRows().indexOf(this);
+		return "["+tableName+": row #"+rowIndex+"]";
 	}
 
 	@Override
@@ -51,7 +63,7 @@ public class TableRow {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((table == null) ? 0 : table.hashCode());
-		result = prime * result + Arrays.hashCode(values);
+		result = prime * result + ((values == null) ? 0 : values.hashCode());
 		return result;
 	}
 
@@ -69,29 +81,14 @@ public class TableRow {
 				return false;
 		} else if (!table.equals(other.table))
 			return false;
-		if (!Arrays.equals(values, other.values))
+		if (values == null) {
+			if (other.values != null)
+				return false;
+		} else if (!values.equals(other.values))
 			return false;
 		return true;
 	}
+
 	
-	@Override
-	public String toString() {
-		TableDefinition tableDefinition = this.table.getTableDefinition();
-		Optional<PrimaryKey> primaryKey = tableDefinition.getPrimaryKey();
-		String tableName = getTable().getTableName();
-		if (primaryKey.isPresent()) {
-			List<ColumnDefinition> pkColDefs = primaryKey.get().getColumnDefinitions();
-			return "["+tableName+":"+pkColDefs+"="+getColumnValues(pkColDefs)+"]";
-		}
-		return "["+tableName+": row #"+table.getTableRows().indexOf(this)+"]";
-	}
-
-	public Object getColumnValue(int i) {
-		return values[i];
-	}
-
-	public List<Object> getColumnValues(List<ColumnDefinition> columnDefinitions) {
-		return columnDefinitions.stream().map(cd -> getColumnValue(cd.getColumnName())).collect(Collectors.toList());
-	}
 	
 }

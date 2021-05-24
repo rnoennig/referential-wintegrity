@@ -20,7 +20,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import domain.DatabaseTable;
+import domain.DatabaseTableCell;
+import domain.DatabaseTableRow;
 import domain.Table;
+import domain.TableCell;
 import domain.TableRow;
 import domain.ri.ColumnDefinition;
 import domain.ri.ForeignKey;
@@ -38,11 +42,11 @@ public class JdbcService {
 	 * @param tableName
 	 * @return all rows of the given database table
 	 */
-	public Table getTableRows(String tableName) {
-		Table table = null;
+	public DatabaseTable getTableRows(String tableName) {
+		DatabaseTable table = null;
 		try {
 			Connection conn = createConnection();
-			table = selectRows(tableName, "select * from " + tableName, conn);
+			table = selectRows(tableName, Collections.emptyList(), Collections.emptyList(), conn);
 		} catch (ClassNotFoundException | SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -69,9 +73,10 @@ public class JdbcService {
 			table = new Table();
 			table.setTableName("All tables");
 			table.setColumnNames("TABLE_NAME");
+			table.setHeader(Arrays.asList(new TableCell("TABLE_NAME", true)));
 			List<TableRow> data = new ArrayList<>();
 			for (String tableName : tableNames) {
-				TableRow row = new TableRow(table, Arrays.asList(tableName));
+				TableRow row = new TableRow(table, Arrays.asList(new TableCell(tableName)));
 				data.add(row);
 			}
 			table.setData(data);
@@ -82,25 +87,25 @@ public class JdbcService {
 		return table;
 	}
 
-	public List<Table> getDependentRows(TableRow row) {
-		Set<TableRow> rows = new HashSet<>();
+	public List<DatabaseTable> getDependentRows(DatabaseTableRow row) {
+		Set<DatabaseTableRow> rows = new HashSet<>();
 		rows.add(row);
 		try {
 			Connection conn = createConnection();
-			Set<TableRow> visitedRowsFollowingPrimaryKeys = new HashSet<>();
+			Set<DatabaseTableRow> visitedRowsFollowingPrimaryKeys = new HashSet<>();
 			getDependentRowsRecursiveFollowingPrimaryKeys(row, visitedRowsFollowingPrimaryKeys, rows, conn);
-			Set<TableRow> visitedRowsFollowingForeignKeys = new HashSet<>();
+			Set<DatabaseTableRow> visitedRowsFollowingForeignKeys = new HashSet<>();
 			getDependentRowsRecursiveFollowingForeignKeys(row, visitedRowsFollowingForeignKeys, rows, conn);
 		} catch (SQLException | ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		List<Table> tables = rows.stream().collect(Collectors.groupingBy(TableRow::getTable)).entrySet().stream()
+		List<DatabaseTable> tables = rows.stream().collect(Collectors.groupingBy(DatabaseTableRow::getTable)).entrySet().stream()
 				.map(e -> e.getKey().setData(e.getValue())).collect(Collectors.toList());
 		Collections.sort(tables, new Comparator<>() {
 
 			@Override
-			public int compare(Table a, Table b) {
+			public int compare(DatabaseTable a, DatabaseTable b) {
 				TableDefinition tableDefinitionA = schema.getTableDefinitionByName(a.getTableName()).get();
 				TableDefinition tableDefinitionB = schema.getTableDefinitionByName(b.getTableName()).get();
 				
@@ -118,7 +123,7 @@ public class JdbcService {
 		return tables;
 	}
 
-	public void getDependentRowsRecursiveFollowingPrimaryKeys(TableRow startRow, Set<TableRow> visitedRows, Set<TableRow> rows,
+	public void getDependentRowsRecursiveFollowingPrimaryKeys(DatabaseTableRow startRow, Set<DatabaseTableRow> visitedRows, Set<DatabaseTableRow> rows,
 			Connection conn) throws SQLException {
 		if (visitedRows.contains(startRow)) {
 			System.err.println("Already visited this row: " + startRow);
@@ -133,26 +138,24 @@ public class JdbcService {
 			return;
 		}
 		List<ForeignKey> referencingForeignKeys = primaryKey.get().getReferencingForeignKeys();
-		// TODO in theory there could be a table A that references a table B with more
-		// than one foreign key, this needs to be handled here if that actually happens
 		for (ForeignKey referencingForeignKey : referencingForeignKeys) {
 			String fkTableName = referencingForeignKey.getTableName();
 			
 			List<String> whereColumnNames = referencingForeignKey.getColumnDefinitions().stream().map(cd -> cd.getColumnName()).collect(Collectors.toList());
 			List<Object> whereColumnValues = startRow.getColumnValues(referencingForeignKey.getReferencedConstraint().getColumnDefinitions());
 			
-			Table table = selectRows(fkTableName, whereColumnNames, whereColumnValues, conn);
-			for (TableRow row : table.getTableRows()) {
+			DatabaseTable table = selectRows(fkTableName, whereColumnNames, whereColumnValues, conn);
+			for (DatabaseTableRow row : table.getTableRows()) {
 				rows.add(row);
 			}
-			for (TableRow dependantRow : table.getTableRows()) {
+			for (DatabaseTableRow dependantRow : table.getTableRows()) {
 				getDependentRowsRecursiveFollowingPrimaryKeys(dependantRow, visitedRows, rows, conn);
 			}
 		}
 
 	}
 	
-	public void getDependentRowsRecursiveFollowingForeignKeys(TableRow startRow, Set<TableRow> visitedRows, Set<TableRow> rows,
+	public void getDependentRowsRecursiveFollowingForeignKeys(DatabaseTableRow startRow, Set<DatabaseTableRow> visitedRows, Set<DatabaseTableRow> rows,
 			Connection conn) throws SQLException {
 		if (visitedRows.contains(startRow)) {
 			System.err.println("Already visited this row: " + startRow);
@@ -169,14 +172,73 @@ public class JdbcService {
 			List<String> whereColumnNames = foreignKey.getReferencedConstraint().getColumnNames();
 			List<Object> whereColumnValues = startRow.getColumnValues(foreignKey.getColumnDefinitions());
 			
-			Table table = selectRows(pkTableName, whereColumnNames, whereColumnValues, conn);
-			for (TableRow row : table.getTableRows()) {
+			DatabaseTable table = selectRows(pkTableName, whereColumnNames, whereColumnValues, conn);
+			for (DatabaseTableRow row : table.getTableRows()) {
 				rows.add(row);
 			}
-			for (TableRow dependantRow : table.getTableRows()) {
+			for (DatabaseTableRow dependantRow : table.getTableRows()) {
 				getDependentRowsRecursiveFollowingForeignKeys(dependantRow, visitedRows, rows, conn);
 			}
 		}
+	}
+	
+	public DatabaseTable selectRows(String tableName, List<String> whereColumnNames, List<Object> whereColumnValues) {
+		DatabaseTable table = null;
+		try {
+			Connection conn = createConnection();
+			table = selectRows(tableName, whereColumnNames, whereColumnValues, conn);
+		} catch (ClassNotFoundException | SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return table;
+	}
+
+	private DatabaseTable selectRows(String tableName, List<String> whereColumnNames, List<Object> whereColumnValues, Connection conn) throws SQLException {
+		Statement stmtFormat = conn.createStatement();
+		StringBuilder sb = new StringBuilder();
+		sb.append("select * from ");
+		sb.append(stmtFormat.enquoteIdentifier(tableName, false) );
+		if (whereColumnNames != null && !whereColumnNames.isEmpty()) {
+			sb.append(" where ");
+		}
+		for (String columnName : whereColumnNames) {
+			sb.append(stmtFormat.enquoteIdentifier(columnName, false));
+			sb.append(" = ?");
+		}
+		String query = sb.toString();
+		System.out.println("Executing query: " + query);
+		
+		TableDefinition tableDefinition = schema.getTableDefinitionByName(tableName).get();
+		List<ColumnDefinition> columnDefinitions = tableDefinition.getColumnDefinitions();
+
+		DatabaseTable table = new DatabaseTable();
+		PreparedStatement stmt = conn.prepareStatement(query);
+		for (int i = 0; i < whereColumnValues.size(); i++) {
+			stmt.setObject(i+1, whereColumnValues.get(i));
+		}
+		ResultSet res = stmt.executeQuery();
+
+		List<DatabaseTableRow> rows = new ArrayList<>();
+		while (res.next()) {
+			List<DatabaseTableCell> row = new ArrayList<>();
+
+			for (ColumnDefinition columnDefinition : columnDefinitions) {
+				String columnName = columnDefinition.getColumnName();
+				Object value = res.getObject(columnName);
+				row.add(new DatabaseTableCell(tableDefinition, columnDefinition, value));
+			}
+
+			rows.add(new DatabaseTableRow(table, row));
+		}
+
+		table.setTableDefinition(tableDefinition);
+		table.setTableName(tableName);
+		table.setColumnNames(columnDefinitions.stream().map(cd -> cd.getColumnName()).toArray(String[]::new));
+		table.setHeader(columnDefinitions.stream().map(cd -> new DatabaseTableCell(tableDefinition, cd, cd.getColumnName(), true)).collect(Collectors.toList()));
+		table.setData(rows);
+
+		return table;
 	}
 	
 	public Table selectRows(String tableName, String query) {
@@ -188,50 +250,6 @@ public class JdbcService {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return table;
-	}
-
-	private Table selectRows(String tableName, List<String> whereColumnNames, List<Object> whereColumnValues, Connection conn) throws SQLException {
-		Statement stmtFormat = conn.createStatement();
-		StringBuilder sb = new StringBuilder();
-		sb.append("select * from ");
-		sb.append(stmtFormat.enquoteIdentifier(tableName, false) );
-		sb.append(" where ");
-		for (String columnName : whereColumnNames) {
-			sb.append(stmtFormat.enquoteIdentifier(columnName, false));
-			sb.append(" = ?");
-		}
-		String query = sb.toString();
-		System.out.println("Executing query: " + query);
-		
-		TableDefinition tableDefinition = schema.getTableDefinitionByName(tableName).get();
-		List<ColumnDefinition> columnDefinitions = tableDefinition.getColumnDefinitions();
-
-		Table table = new Table();
-		PreparedStatement stmt = conn.prepareStatement(query);
-		for (int i = 0; i < whereColumnValues.size(); i++) {
-			stmt.setObject(i+1, whereColumnValues.get(i));
-		}
-		ResultSet res = stmt.executeQuery();
-
-		List<TableRow> rows = new ArrayList<>();
-		while (res.next()) {
-			List<Object> row = new ArrayList<>();
-
-			for (ColumnDefinition columnDefinition : columnDefinitions) {
-				String columnName = columnDefinition.getColumnName();
-				Object value = res.getObject(columnName);
-				row.add(value);
-			}
-
-			rows.add(new TableRow(table, row));
-		}
-
-		table.setTableDefinition(tableDefinition);
-		table.setTableName(tableName);
-		table.setColumnNames(columnDefinitions.stream().map(cd -> cd.getColumnName()).toArray(String[]::new));
-		table.setData(rows);
-
 		return table;
 	}
 	
@@ -247,20 +265,20 @@ public class JdbcService {
 
 		List<TableRow> rows = new ArrayList<>();
 		while (res.next()) {
-			List<Object> row = new ArrayList<>();
+			List<TableCell> row = new ArrayList<>();
 
 			for (ColumnDefinition columnDefinition : columnDefinitions) {
 				String columnName = columnDefinition.getColumnName();
 				Object value = res.getObject(columnName);
-				row.add(value);
+				row.add(new TableCell(value));
 			}
 
 			rows.add(new TableRow(table, row));
 		}
 
-		table.setTableDefinition(tableDefinition);
 		table.setTableName(tableName);
 		table.setColumnNames(columnDefinitions.stream().map(cd -> cd.getColumnName()).toArray(String[]::new));
+		table.setHeader(columnDefinitions.stream().map(cd -> new DatabaseTableCell(tableDefinition, cd, cd.getColumnName(), true)).collect(Collectors.toList()));
 		table.setData(rows);
 
 		return table;

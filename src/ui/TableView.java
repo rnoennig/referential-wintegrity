@@ -13,9 +13,12 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
 import domain.Table;
+import domain.TableCell;
 
 public class TableView extends JPanel {
 	private static final long serialVersionUID = 1L;
@@ -46,7 +49,13 @@ public class TableView extends JPanel {
 
 			@Override
 			public Object getValueAt(int rowIndex, int columnIndex) {
-				return table.getTableRows().get(rowIndex).getValues()[columnIndex];
+				TableCell tableCell;
+				if (rowIndex < 0) {
+					tableCell = table.getTableHeader().get(columnIndex);
+				} else {
+					tableCell = table.getTableRows().get(rowIndex).getValues().get(columnIndex);
+				}
+				return tableCell;
 			}
 
 			@Override
@@ -66,10 +75,14 @@ public class TableView extends JPanel {
 				int row = jTable.rowAtPoint(e.getPoint());
 				int col = jTable.columnAtPoint(e.getPoint());
 				for (ClickAdapter clickAdapter : clickAdapters) {
-					clickAdapter.cellSelected(table.getTableRows().get(row), jTable.getValueAt(row, col).toString());
+					clickAdapter.cellSelected(table.getTableRows().get(row), (TableCell)jTable.getValueAt(row, col));
 				}
 			}
 		});
+		jTable.getTableHeader().setDefaultRenderer(
+				createStylePresevingCellRenderer(jTable.getTableHeader().getDefaultRenderer()));
+		jTable.setDefaultRenderer(Object.class,
+				createStylePresevingCellRenderer(jTable.getDefaultRenderer(Object.class)));
 		
 		// if the table doesn't specify a preferred scrollable viewport size the default
 		// scrollpane size is larger than the table
@@ -98,5 +111,31 @@ public class TableView extends JPanel {
 
 	public void addClicklistener(ClickAdapter clickAdapter) {
 		this.clickAdapters.add(clickAdapter);
+	}
+	
+	protected DefaultTableCellRenderer createStylePresevingCellRenderer(TableCellRenderer tableCellRenderer) {
+		DefaultTableCellRenderer primaryKeyCellRenderer = new DefaultTableCellRenderer() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+					boolean hasFocus, int row, int column) {
+				final Component result = tableCellRenderer.getTableCellRendererComponent(table, value, isSelected,
+						hasFocus, row, column);
+				
+				Object cell = table.getValueAt(row, column);
+				if (cell instanceof TableCell) {
+					renderCell((JLabel) tableCellRenderer, result, (TableCell)cell);
+				}
+				
+				return result;
+			}
+		};
+		return primaryKeyCellRenderer;
+	}
+
+	protected void renderCell(JLabel tableCellRenderer, Component result, TableCell cell) {
+		String cellText = cell.getValue().toString();
+		tableCellRenderer.setText(cellText);
 	}
 }
