@@ -23,6 +23,18 @@ public class DatabaseTableCell extends TableCell {
 		this.columnDefinition = columnDefinition;
 	}
 
+	public DatabaseTableCell(DatabaseTableCell tableCell) {
+		this(tableCell.getTableDefinition(), tableCell.getColumnDefinition(), tableCell.getValue(), tableCell.isHeader());
+	}
+
+	private ColumnDefinition getColumnDefinition() {
+		return this.columnDefinition;
+	}
+
+	private TableDefinition getTableDefinition() {
+		return this.tableDefinition;
+	}
+
 	public boolean isPrimaryKey() {
 		Optional<PrimaryKey> primaryKey = tableDefinition.getPrimaryKey();
 		if (primaryKey.isPresent()) {

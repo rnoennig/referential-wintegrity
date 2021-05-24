@@ -1,5 +1,6 @@
 package domain;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,6 +13,10 @@ public class DatabaseTableRow extends TableRow {
 		super(table, row);
 	}
 	
+	public DatabaseTableRow(DatabaseTableRow selectedRow) {
+		super(new DatabaseTable(selectedRow.getTable()), new ArrayList<>(selectedRow.getValues()));
+	}
+
 	@Override
 	public DatabaseTable getTable() {
 		return (DatabaseTable)super.getTable();

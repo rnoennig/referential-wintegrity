@@ -152,10 +152,10 @@ public class Main {
 								System.err.println("Cannot open dependend[ent|ing] rows because no primary key was found");
 								return;
 							}
-							String tabTitle = tableName + "#" + primaryKey.get().getColumnDefinitions() + "="
+							
+							String tabTitle = row.getTableName() + "#" + primaryKey.get().getColumnDefinitions() + "="
 									+ row.getColumnValues(primaryKey.get().getColumnDefinitions());
 							JPanel panel = addTab(tabPane, tabTitle);
-							// FIXME when this is selected then the original jtable loses all but the selected row 
 							addDependentRowsTableViews(panel, (DatabaseTableRow)row);
 						}
 					});
@@ -176,11 +176,26 @@ public class Main {
 	 * @return a panel with all table and all dependant rows for the given row
 	 */
 	protected void addDependentRowsTableViews(JComponent panel, DatabaseTableRow row) {
-		List<DatabaseTable> dependentRows = this.jdbcProvider.getDependentRows(row);
+		SwingWorker<List<DatabaseTable>, Void> swingWorker = new SwingWorker<List<DatabaseTable>, Void>() {
+			@Override
+			protected List<DatabaseTable> doInBackground() throws Exception {
+				return Main.this.jdbcProvider.getDependentRows(row);
+			}
 
-		for (DatabaseTable dependentTables : dependentRows) {
-			panel.add(new DatabaseTableView(dependentTables));
-		}
+			@Override
+			protected void done() {
+				try {
+					for (DatabaseTable dependentTables : get()) {
+						panel.add(new DatabaseTableView(dependentTables));
+					}
+					panel.revalidate();
+				} catch (InterruptedException | ExecutionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		};
+		swingWorker.execute();
 	}
 
 	/**

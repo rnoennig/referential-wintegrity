@@ -10,7 +10,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -87,39 +86,56 @@ public class JdbcService {
 		return table;
 	}
 
-	public List<DatabaseTable> getDependentRows(DatabaseTableRow row) {
-		Set<DatabaseTableRow> rows = new HashSet<>();
-		rows.add(row);
+	public List<DatabaseTable> getDependentRows(DatabaseTableRow selectedRow) {
+		Set<DatabaseTableRow> dependantRows = new HashSet<>();
+		// since the given row is likely already part of a table we need a deep copy
+		DatabaseTableRow databaseTableRow = new DatabaseTableRow(selectedRow);
+		dependantRows.add(databaseTableRow);
 		try {
 			Connection conn = createConnection();
 			Set<DatabaseTableRow> visitedRowsFollowingPrimaryKeys = new HashSet<>();
-			getDependentRowsRecursiveFollowingPrimaryKeys(row, visitedRowsFollowingPrimaryKeys, rows, conn);
+			getDependentRowsRecursiveFollowingPrimaryKeys(databaseTableRow, visitedRowsFollowingPrimaryKeys, dependantRows, conn);
 			Set<DatabaseTableRow> visitedRowsFollowingForeignKeys = new HashSet<>();
-			getDependentRowsRecursiveFollowingForeignKeys(row, visitedRowsFollowingForeignKeys, rows, conn);
+			getDependentRowsRecursiveFollowingForeignKeys(databaseTableRow, visitedRowsFollowingForeignKeys, dependantRows, conn);
 		} catch (SQLException | ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		List<DatabaseTable> tables = rows.stream().collect(Collectors.groupingBy(DatabaseTableRow::getTable)).entrySet().stream()
-				.map(e -> e.getKey().setData(e.getValue())).collect(Collectors.toList());
-		Collections.sort(tables, new Comparator<>() {
-
-			@Override
-			public int compare(DatabaseTable a, DatabaseTable b) {
-				TableDefinition tableDefinitionA = schema.getTableDefinitionByName(a.getTableName()).get();
-				TableDefinition tableDefinitionB = schema.getTableDefinitionByName(b.getTableName()).get();
-				
-				if (tableDefinitionA.dependsOn(tableDefinitionB)) {
-					return 1;
-				}
-				
-				if (tableDefinitionB.dependsOn(tableDefinitionA)) {
-					return -1;
-				}
-				
-				return tableDefinitionA.getTableName().compareTo(tableDefinitionB.getTableName());
+		// group by table
+		Map<DatabaseTable, List<DatabaseTableRow>> databaseTableRowsByTable = new HashMap<>();
+		for (DatabaseTableRow row : dependantRows) {
+			databaseTableRowsByTable.putIfAbsent(row.getTable(), new ArrayList<>());
+			databaseTableRowsByTable.get(row.getTable()).add(row);
+		}
+		// collect to lists
+		for (DatabaseTable databaseTable : databaseTableRowsByTable.keySet()) {
+			List<DatabaseTableRow> rows = databaseTableRowsByTable.get(databaseTable);
+			for ( DatabaseTableRow row : rows) {
+//				System.out.println("Row before: " + row);
+				row.setTable(databaseTable);
+//				System.out.println("Row  after: " + row);
 			}
-		});
+			databaseTable.setData(rows);
+		}
+		List<DatabaseTable> tables = new ArrayList<>(databaseTableRowsByTable.keySet());
+//		Collections.sort(tables, new Comparator<>() {
+//
+//			@Override
+//			public int compare(DatabaseTable a, DatabaseTable b) {
+//				TableDefinition tableDefinitionA = schema.getTableDefinitionByName(a.getTableName()).get();
+//				TableDefinition tableDefinitionB = schema.getTableDefinitionByName(b.getTableName()).get();
+//				
+//				if (tableDefinitionA.dependsOn(tableDefinitionB)) {
+//					return 1;
+//				}
+//				
+//				if (tableDefinitionB.dependsOn(tableDefinitionA)) {
+//					return -1;
+//				}
+//				
+//				return tableDefinitionA.getTableName().compareTo(tableDefinitionB.getTableName());
+//			}
+//		});
 		return tables;
 	}
 
@@ -240,49 +256,6 @@ public class JdbcService {
 
 		return table;
 	}
-	
-	public Table selectRows(String tableName, String query) {
-		Table table = null;
-		try {
-			Connection conn = createConnection();
-			table = selectRows(tableName, query, conn);
-		} catch (ClassNotFoundException | SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return table;
-	}
-	
-	private Table selectRows(String tableName, String query, Connection conn) throws SQLException {
-		System.out.println("Executing query: " + query);
-		
-		TableDefinition tableDefinition = schema.getTableDefinitionByName(tableName).get();
-		List<ColumnDefinition> columnDefinitions = tableDefinition.getColumnDefinitions();
-
-		Table table = new Table();
-		Statement stmt = conn.createStatement();
-		ResultSet res = stmt.executeQuery(query);
-
-		List<TableRow> rows = new ArrayList<>();
-		while (res.next()) {
-			List<TableCell> row = new ArrayList<>();
-
-			for (ColumnDefinition columnDefinition : columnDefinitions) {
-				String columnName = columnDefinition.getColumnName();
-				Object value = res.getObject(columnName);
-				row.add(new TableCell(value));
-			}
-
-			rows.add(new TableRow(table, row));
-		}
-
-		table.setTableName(tableName);
-		table.setColumnNames(columnDefinitions.stream().map(cd -> cd.getColumnName()).toArray(String[]::new));
-		table.setHeader(columnDefinitions.stream().map(cd -> new DatabaseTableCell(tableDefinition, cd, cd.getColumnName(), true)).collect(Collectors.toList()));
-		table.setData(rows);
-
-		return table;
-	}
 
 	private Connection createConnection() throws ClassNotFoundException, SQLException {
 		Class.forName("org.postgresql.Driver");
@@ -290,7 +263,8 @@ public class JdbcService {
 		Connection conn = DriverManager.getConnection(url);
 		return conn;
 	}
-
+	
+	// TODO create intermedia textual representation of the schema, e.g. list of primary key, foreign keys and columns
 	public Schema readSchemaGraph() {
 		System.out.println("Reading schema");
 		schema = new Schema();

@@ -1,9 +1,11 @@
 package domain;
 
+import domain.ri.TableDefinition;
+
 public class TableCell {
 
-	private Object value;
-	private boolean header = false;
+	protected Object value;
+	protected boolean header = false;
 
 	public TableCell(Object value) {
 		this.value = value;
@@ -21,4 +23,34 @@ public class TableCell {
 	public boolean isHeader() {
 		return header;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (header ? 1231 : 1237);
+		result = prime * result + ((value == null) ? 0 : value.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		TableCell other = (TableCell) obj;
+		if (header != other.header)
+			return false;
+		if (value == null) {
+			if (other.value != null)
+				return false;
+		} else if (!value.equals(other.value))
+			return false;
+		return true;
+	}
+	
+	
 }

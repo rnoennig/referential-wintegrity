@@ -24,9 +24,11 @@ public class TableView extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private List<ClickAdapter> clickAdapters = new LinkedList<>();
 	protected JTable jTable;
+	private Table table;
 
 	public TableView(Table table) {
 		super();
+		this.table = table;
 
 		this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
@@ -50,6 +52,7 @@ public class TableView extends JPanel {
 			@Override
 			public Object getValueAt(int rowIndex, int columnIndex) {
 				TableCell tableCell;
+
 				if (rowIndex < 0) {
 					tableCell = table.getTableHeader().get(columnIndex);
 				} else {
@@ -123,7 +126,12 @@ public class TableView extends JPanel {
 				final Component result = tableCellRenderer.getTableCellRendererComponent(table, value, isSelected,
 						hasFocus, row, column);
 				
-				Object cell = table.getValueAt(row, column);
+				Object cell;
+				if (row < 0) {
+					cell = TableView.this.table.getTableHeader().get(table.convertColumnIndexToModel(column));
+				} else {
+					cell = table.getValueAt(row, column);
+				}
 				if (cell instanceof TableCell) {
 					renderCell((JLabel) tableCellRenderer, result, (TableCell)cell);
 				}

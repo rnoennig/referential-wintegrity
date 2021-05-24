@@ -11,14 +11,13 @@ public class Table {
 	List<? extends TableRow> data;
 	List<TableCell> header;
 	String[] columnNames;
-	private String tableName;
+	protected String tableName;
 	public List<? extends TableRow> getTableRows() {
 		return data;
 	}
 
-	public Table setData(List<? extends TableRow> data) {
+	public void setData(List<? extends TableRow> data) {
 		this.data = data;
-		return this;
 	}
 
 	public String[] getColumnNames() {
