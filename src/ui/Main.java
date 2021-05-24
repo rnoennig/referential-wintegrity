@@ -66,6 +66,12 @@ public class Main {
 				// DEMO
 				// TableRow row = jdbcProvider.selectRows("child", "select * from child where id
 				// = 16").getTableRows().get(0);
+				try {
+					get();
+				} catch (InterruptedException | ExecutionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				TableRow row = jdbcProvider
 						.selectRows("greatgrandparent", "select * from greatgrandparent where id = 1").getTableRows()
 						.get(0);
