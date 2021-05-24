@@ -9,6 +9,7 @@ public class TableDefinition {
 	private Schema schema;
 	private String tableName;
 	private PrimaryKey primaryKey;
+	private List<UniqueConstraint> uniqueConstraints = new ArrayList<>();
 	private List<ForeignKey> foreignKeys = new ArrayList<>();
 	private List<ColumnDefinition> columnDefinitions;
 
@@ -28,6 +29,11 @@ public class TableDefinition {
 	public void setPrimaryKey(PrimaryKey primaryKey) {
 		this.primaryKey = primaryKey;
 		primaryKey.setTableDefinition(this);
+	}
+	
+	public void addUniqueConstraint(UniqueConstraint uniqueConstraint) {
+		uniqueConstraints.add(uniqueConstraint);
+		uniqueConstraint.setTableDefinition(this);
 	}
 
 	public void addForeignKey(ForeignKey foreignKey) {
@@ -71,8 +77,8 @@ public class TableDefinition {
 		
 		List<ForeignKey> foreignKeys = this.getForeignKeys();
 		for (ForeignKey foreignKey : foreignKeys) {
-			PrimaryKey referencedPrimaryKey = foreignKey.getReferencedPrimaryKey();
-			String pkTableName = referencedPrimaryKey.getTableName();
+			Constraint referencedConstraint = foreignKey.getReferencedConstraint();
+			String pkTableName = referencedConstraint.getTableName();
 			TableDefinition tableDefinitionByName = schema.getTableDefinitionByName(pkTableName).get();
 			tableDefinitionByName.acceptForeignKeyVisitor(schemaVisitor);
 		}

@@ -3,6 +3,7 @@ package dao;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -26,6 +27,7 @@ import domain.ri.ForeignKey;
 import domain.ri.PrimaryKey;
 import domain.ri.Schema;
 import domain.ri.TableDefinition;
+import domain.ri.UniqueConstraint;
 
 public class JdbcService {
 
@@ -52,7 +54,7 @@ public class JdbcService {
 	 * 
 	 * @return all tables in the connected database
 	 */
-	public Table getTables() {
+	public Table selectAllTableNames() {
 		Table table = null;
 		try {
 			Connection conn = createConnection();
@@ -119,6 +121,7 @@ public class JdbcService {
 	public void getDependentRowsRecursiveFollowingPrimaryKeys(TableRow startRow, Set<TableRow> visitedRows, Set<TableRow> rows,
 			Connection conn) throws SQLException {
 		if (visitedRows.contains(startRow)) {
+			System.err.println("Already visited this row: " + startRow);
 			return;
 		}
 		visitedRows.add(startRow);
@@ -126,6 +129,7 @@ public class JdbcService {
 		TableDefinition tableDefinition = schema.getTableDefinitionByName(startRow.getTableName()).get();
 		Optional<PrimaryKey> primaryKey = tableDefinition.getPrimaryKey();
 		if (primaryKey.isEmpty()) {
+			System.err.println("No PK found in " + startRow + " stop following primary keys up to generate schema.");
 			return;
 		}
 		List<ForeignKey> referencingForeignKeys = primaryKey.get().getReferencingForeignKeys();
@@ -133,9 +137,11 @@ public class JdbcService {
 		// than one foreign key, this needs to be handled here if that actually happens
 		for (ForeignKey referencingForeignKey : referencingForeignKeys) {
 			String fkTableName = referencingForeignKey.getTableName();
-			String where = referencingForeignKey.buildJoinByForeignKeyExpression(startRow);
 			
-			Table table = selectRows(fkTableName , "select * from " + fkTableName + " where " + where, conn);
+			List<String> whereColumnNames = referencingForeignKey.getColumnDefinitions().stream().map(cd -> cd.getColumnName()).collect(Collectors.toList());
+			List<Object> whereColumnValues = startRow.getColumnValues(referencingForeignKey.getReferencedConstraint().getColumnDefinitions());
+			
+			Table table = selectRows(fkTableName, whereColumnNames, whereColumnValues, conn);
 			for (TableRow row : table.getTableRows()) {
 				rows.add(row);
 			}
@@ -149,6 +155,7 @@ public class JdbcService {
 	public void getDependentRowsRecursiveFollowingForeignKeys(TableRow startRow, Set<TableRow> visitedRows, Set<TableRow> rows,
 			Connection conn) throws SQLException {
 		if (visitedRows.contains(startRow)) {
+			System.err.println("Already visited this row: " + startRow);
 			return;
 		}
 		visitedRows.add(startRow);
@@ -156,10 +163,13 @@ public class JdbcService {
 		TableDefinition tableDefinition = schema.getTableDefinitionByName(startRow.getTableName()).get();
 		List<ForeignKey> foreignKeys = tableDefinition.getForeignKeys();
 		for (ForeignKey foreignKey : foreignKeys) {
-			PrimaryKey referencedPrimaryKey = foreignKey.getReferencedPrimaryKey();
-			String pkTableName = referencedPrimaryKey.getTableName();
-			String where = foreignKey.buildJoinByPrimaryKeyExpression(startRow);
-			Table table = selectRows(pkTableName, "select * from " + pkTableName + " where " + where, conn);
+			UniqueConstraint referencedUniqueConstraint = foreignKey.getReferencedConstraint();
+			String pkTableName = referencedUniqueConstraint.getTableName();
+			
+			List<String> whereColumnNames = foreignKey.getReferencedConstraint().getColumnNames();
+			List<Object> whereColumnValues = startRow.getColumnValues(foreignKey.getColumnDefinitions());
+			
+			Table table = selectRows(pkTableName, whereColumnNames, whereColumnValues, conn);
 			for (TableRow row : table.getTableRows()) {
 				rows.add(row);
 			}
@@ -181,6 +191,50 @@ public class JdbcService {
 		return table;
 	}
 
+	private Table selectRows(String tableName, List<String> whereColumnNames, List<Object> whereColumnValues, Connection conn) throws SQLException {
+		Statement stmtFormat = conn.createStatement();
+		StringBuilder sb = new StringBuilder();
+		sb.append("select * from ");
+		sb.append(stmtFormat.enquoteIdentifier(tableName, false) );
+		sb.append(" where ");
+		for (String columnName : whereColumnNames) {
+			sb.append(stmtFormat.enquoteIdentifier(columnName, false));
+			sb.append(" = ?");
+		}
+		String query = sb.toString();
+		System.out.println("Executing query: " + query);
+		
+		TableDefinition tableDefinition = schema.getTableDefinitionByName(tableName).get();
+		List<ColumnDefinition> columnDefinitions = tableDefinition.getColumnDefinitions();
+
+		Table table = new Table();
+		PreparedStatement stmt = conn.prepareStatement(query);
+		for (int i = 0; i < whereColumnValues.size(); i++) {
+			stmt.setObject(i+1, whereColumnValues.get(i));
+		}
+		ResultSet res = stmt.executeQuery();
+
+		List<TableRow> rows = new ArrayList<>();
+		while (res.next()) {
+			List<Object> row = new ArrayList<>();
+
+			for (ColumnDefinition columnDefinition : columnDefinitions) {
+				String columnName = columnDefinition.getColumnName();
+				Object value = res.getObject(columnName);
+				row.add(value);
+			}
+
+			rows.add(new TableRow(table, row));
+		}
+
+		table.setTableDefinition(tableDefinition);
+		table.setTableName(tableName);
+		table.setColumnNames(columnDefinitions.stream().map(cd -> cd.getColumnName()).toArray(String[]::new));
+		table.setData(rows);
+
+		return table;
+	}
+	
 	private Table selectRows(String tableName, String query, Connection conn) throws SQLException {
 		System.out.println("Executing query: " + query);
 		
@@ -193,11 +247,11 @@ public class JdbcService {
 
 		List<TableRow> rows = new ArrayList<>();
 		while (res.next()) {
-			List<String> row = new ArrayList<>();
+			List<Object> row = new ArrayList<>();
 
 			for (ColumnDefinition columnDefinition : columnDefinitions) {
 				String columnName = columnDefinition.getColumnName();
-				String value = res.getObject(columnName).toString();
+				Object value = res.getObject(columnName);
 				row.add(value);
 			}
 
@@ -227,11 +281,10 @@ public class JdbcService {
 			Connection conn = createConnection();
 			DatabaseMetaData databaseMetaData = conn.getMetaData();
 
-			Table tables = getTables();
+			Table tables = selectAllTableNames();
 			for (TableRow tableRow : tables.getTableRows()) {
-				String tableName = tableRow.getColumnValue(0);
-				//System.out.println("Getting PK and FK from " + tableName);
-				
+				String tableName = tableRow.getColumnValue(0).toString();
+				System.out.println("Reading schema: processing table " + tableName);
 				ResultSet primaryKeysResultSet = databaseMetaData.getPrimaryKeys(null, null, tableName);
 				Map<String, List<ColumnDefinition>> primaryKeys = new HashMap<>();
 				while (primaryKeysResultSet.next()) {
@@ -259,7 +312,6 @@ public class JdbcService {
 				Map<String, String> fkPkNames = new HashMap<>();
 				while (importedKeysResultSet.next()) {
 					String pkTableName = importedKeysResultSet.getString("PKTABLE_NAME");
-//					String fkTableName = importedKeysResultSet.getString("FKTABLE_NAME");
 					String pkColumnName = importedKeysResultSet.getString("PKCOLUMN_NAME");
 					String fkColumnName = importedKeysResultSet.getString("FKCOLUMN_NAME");
 					String pkName = importedKeysResultSet.getString("PK_NAME");
@@ -284,16 +336,20 @@ public class JdbcService {
 				for (String fkName : fkPkNames.keySet()) {
 					String pkTableName = fkPkTableNames.get(fkName);
 					String pkName = fkPkNames.get(fkName);
-					PrimaryKey primaryKey = schema.addPrimaryKey(pkTableName, pkName, fkPkColumns.get(fkName));
+					// referenced columns aren't always primary keys, but can also be unique constraints
+					// need to differentiate between referenced keys and primary keys!
+					// primary key is a special kind of referencable key!
+					UniqueConstraint uniqueConstraint = schema.addUniqueConstraint(pkTableName, pkName, fkPkColumns.get(fkName));
 					ForeignKey foreignKey = schema.addForeignKey(tableName, fkName, fkFkColumns.get(fkName),
-							schema.getPrimaryKeyByName(pkName));
-					primaryKey.addReferencingForeignKey(foreignKey);
+							uniqueConstraint);
+					uniqueConstraint.addReferencingForeignKey(foreignKey);
 				}
 				
 				ResultSet columns = databaseMetaData.getColumns(null, null, tableName, null);
 				List<ColumnDefinition> columnDefinitions = new ArrayList<>();
 				while (columns.next()) {
 					String columnName = columns.getString("COLUMN_NAME");
+					System.out.println("Reading schema:     add column " + columnName);
 //					String columnSize = columns.getString("COLUMN_SIZE");
 //					String datatype = columns.getString("DATA_TYPE");
 //					String isNullable = columns.getString("IS_NULLABLE");

@@ -11,6 +11,10 @@ import javax.swing.table.TableCellRenderer;
 import domain.Table;
 import domain.ri.TableDefinition;
 
+/**
+ * 
+ *
+ */
 public class FormattedDatabaseTableView extends TableView {
 	private static final long serialVersionUID = 1L;
 
@@ -18,17 +22,27 @@ public class FormattedDatabaseTableView extends TableView {
 		super(table);
 
 		TableDefinition tableDefinition = table.getTableDefinition();
-		if (!tableDefinition.hasPrimaryKey()) {
-			return;
+		if (tableDefinition.hasPrimaryKey()) {
+			enablePrimaryKeyColumnBoldRenderer(tableDefinition);
 		}
-		List<Integer> pkIndexes = tableDefinition.getPrimaryKeyColumnIndexes();
-
-		jTable.getTableHeader().setDefaultRenderer(createPrimaryKeyCellRenderer(
-				jTable.getTableHeader().getDefaultRenderer(), pkIndexes));
-		jTable.setDefaultRenderer(Object.class, createPrimaryKeyCellRenderer(
-				jTable.getDefaultRenderer(Object.class), pkIndexes));
 	}
 
+	private void enablePrimaryKeyColumnBoldRenderer(TableDefinition tableDefinition) {
+		List<Integer> pkIndexes = tableDefinition.getPrimaryKeyColumnIndexes();
+
+		jTable.getTableHeader().setDefaultRenderer(
+				createPrimaryKeyCellRenderer(jTable.getTableHeader().getDefaultRenderer(), pkIndexes));
+		jTable.setDefaultRenderer(Object.class,
+				createPrimaryKeyCellRenderer(jTable.getDefaultRenderer(Object.class), pkIndexes));
+	}
+
+	/**
+	 * 
+	 * @param tableCellRenderer original cell renderer is used to preserve the look
+	 *                          and feel
+	 * @param pkIndexes
+	 * @return
+	 */
 	private DefaultTableCellRenderer createPrimaryKeyCellRenderer(TableCellRenderer tableCellRenderer,
 			List<Integer> pkIndexes) {
 		DefaultTableCellRenderer primaryKeyCellRenderer = new DefaultTableCellRenderer() {
@@ -40,8 +54,10 @@ public class FormattedDatabaseTableView extends TableView {
 				final Component result = tableCellRenderer.getTableCellRendererComponent(table, value, isSelected,
 						hasFocus, row, column);
 
+				// FIXME column is the displayed columnindex, not the index in the column model,
+				// so rearranging columns doesn't affect in which column the style is changed
 				if (pkIndexes.contains(column)) {
-					result.setFont(result.getFont().deriveFont(Font.BOLD, getFont().getSize()));
+					result.setFont(result.getFont().deriveFont(Font.BOLD, result.getFont().getSize()));
 				}
 
 				return result;

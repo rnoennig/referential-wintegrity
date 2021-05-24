@@ -95,7 +95,7 @@ public class Main {
 		SwingWorker<Table, Void> swingWorker = new SwingWorker<Table, Void>() {
 			@Override
 			protected Table doInBackground() throws Exception {
-				return Main.this.jdbcProvider.getTables();
+				return Main.this.jdbcProvider.selectAllTableNames();
 			}
 
 			@Override
@@ -152,6 +152,7 @@ public class Main {
 							String tabTitle = tableName + "#" + primaryKey.get().getColumnDefinitions() + "="
 									+ row.getColumnValues(primaryKey.get().getColumnDefinitions());
 							JPanel panel = addTab(tabPane, tabTitle);
+							// FIXME when this is selected then the original jtable loses all but the selected row 
 							addDependentRowsTableViews(panel, row);
 						}
 					});

@@ -16,10 +16,10 @@ import domain.ri.TableDefinition;
 public class TableRow {
 	private Table table;
 	
-	private String[] values;
-	public TableRow(Table table, List<String> values) {
+	private Object[] values;
+	public TableRow(Table table, List<Object> row) {
 		this.table = table;
-		this.values = values.toArray(new String[0]);
+		this.values = row.toArray();
 	}
 	
 	public String getTableName() {
@@ -33,14 +33,14 @@ public class TableRow {
 		this.table = table;
 	}
 
-	public String[] getValues() {
+	public Object[] getValues() {
 		return values;
 	}
-	public void setValues(String[] values) {
+	public void setValues(Object[] values) {
 		this.values = values;
 	}
 
-	public String getColumnValue(String columnName) {
+	public Object getColumnValue(String columnName) {
 		List<String> columnNames = Arrays.stream(this.table.getColumnNames()).map(x -> x.toLowerCase()).collect(Collectors.toList());
 		int columnIndex = columnNames.indexOf(columnName.toLowerCase());
 		return this.values[columnIndex];
@@ -86,11 +86,11 @@ public class TableRow {
 		return "["+tableName+": row #"+table.getTableRows().indexOf(this)+"]";
 	}
 
-	public String getColumnValue(int i) {
+	public Object getColumnValue(int i) {
 		return values[i];
 	}
 
-	public List<String> getColumnValues(List<ColumnDefinition> columnDefinitions) {
+	public List<Object> getColumnValues(List<ColumnDefinition> columnDefinitions) {
 		return columnDefinitions.stream().map(cd -> getColumnValue(cd.getColumnName())).collect(Collectors.toList());
 	}
 	
