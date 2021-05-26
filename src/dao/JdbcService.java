@@ -35,6 +35,7 @@ import domain.ri.UniqueConstraint;
 public class JdbcService {
 
 	private Schema schema;
+	private String schemaName = null;
 
 	/**
 	 * 
@@ -46,6 +47,7 @@ public class JdbcService {
 		try {
 			Connection conn = createConnection();
 			table = selectRows(tableName, Collections.emptyList(), Collections.emptyList(), conn);
+			conn.close();
 		} catch (ClassNotFoundException | SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -62,16 +64,18 @@ public class JdbcService {
 		try {
 			Connection conn = createConnection();
 			DatabaseMetaData databaseMetaData = conn.getMetaData();
-			ResultSet res = databaseMetaData.getTables(null, null, null, new String[] { "TABLE" });
+			ResultSet res = databaseMetaData.getTables(null, schemaName, null, new String[] { "TABLE" });
 			List<String> tableNames = new ArrayList<>();
 			while (res.next()) {
 				String systemTableName = res.getString("TABLE_NAME");
 				tableNames.add(systemTableName);
 			}
+			res.close();
+			conn.close();
 
 			table = new Table();
 			table.setTableName("All tables");
-			table.setColumnNames("TABLE_NAME");
+			table.setColumnNames(Arrays.asList("TABLE_NAME"));
 			table.setHeader(Arrays.asList(new TableCell("TABLE_NAME", true)));
 			List<TableRow> data = new ArrayList<>();
 			for (String tableName : tableNames) {
@@ -97,6 +101,7 @@ public class JdbcService {
 			getDependentRowsRecursiveFollowingPrimaryKeys(databaseTableRow, visitedRowsFollowingPrimaryKeys, dependantRows, conn);
 			Set<DatabaseTableRow> visitedRowsFollowingForeignKeys = new HashSet<>();
 			getDependentRowsRecursiveFollowingForeignKeys(databaseTableRow, visitedRowsFollowingForeignKeys, dependantRows, conn);
+			conn.close();
 		} catch (SQLException | ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -203,6 +208,7 @@ public class JdbcService {
 		try {
 			Connection conn = createConnection();
 			table = selectRows(tableName, whereColumnNames, whereColumnValues, conn);
+			conn.close();
 		} catch (ClassNotFoundException | SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -222,6 +228,7 @@ public class JdbcService {
 			sb.append(stmtFormat.enquoteIdentifier(columnName, false));
 			sb.append(" = ?");
 		}
+		stmtFormat.close();
 		String query = sb.toString();
 		System.out.println("Executing query: " + query);
 		
@@ -247,10 +254,15 @@ public class JdbcService {
 
 			rows.add(new DatabaseTableRow(table, row));
 		}
+		
+		res.close();
+		stmt.close();
 
 		table.setTableDefinition(tableDefinition);
 		table.setTableName(tableName);
-		table.setColumnNames(columnDefinitions.stream().map(cd -> cd.getColumnName()).toArray(String[]::new));
+		table.setColumnNames(columnDefinitions.stream()
+				.map(cd -> cd.getColumnName())
+				.collect(Collectors.toList()));
 		table.setHeader(columnDefinitions.stream().map(cd -> new DatabaseTableCell(tableDefinition, cd, cd.getColumnName(), true)).collect(Collectors.toList()));
 		table.setData(rows);
 
@@ -258,6 +270,9 @@ public class JdbcService {
 	}
 
 	private Connection createConnection() throws ClassNotFoundException, SQLException {
+//		Class.forName("oracle.jdbc.driver.OracleDriver");
+//		String url = "jdbc:oracle:thin:@localhost:51521:ORCLCDB";
+//		Connection conn = DriverManager.getConnection(url, "secpki", "secpassw");
 		Class.forName("org.postgresql.Driver");
 		String url = "jdbc:postgresql://localhost/?user=postgres&password=mysecretpassword&ssl=false";
 		Connection conn = DriverManager.getConnection(url);
@@ -271,13 +286,15 @@ public class JdbcService {
 
 		try {
 			Connection conn = createConnection();
+			System.out.println("Fetching metadata");
 			DatabaseMetaData databaseMetaData = conn.getMetaData();
+			System.out.println("Selecting all tables");
 
 			Table tables = selectAllTableNames();
 			for (TableRow tableRow : tables.getTableRows()) {
 				String tableName = tableRow.getColumnValue(0).toString();
 				System.out.println("Reading schema: processing table " + tableName);
-				ResultSet primaryKeysResultSet = databaseMetaData.getPrimaryKeys(null, null, tableName);
+				ResultSet primaryKeysResultSet = databaseMetaData.getPrimaryKeys(null, schemaName, tableName);
 				Map<String, List<ColumnDefinition>> primaryKeys = new HashMap<>();
 				while (primaryKeysResultSet.next()) {
 					String primaryKeyName = primaryKeysResultSet.getString("PK_NAME");
@@ -289,6 +306,7 @@ public class JdbcService {
 					List<ColumnDefinition> primaryKeyColumnDefinitions = primaryKeys.get(primaryKeyName);
 					primaryKeyColumnDefinitions.add(new ColumnDefinition(schema.addTable(tableName), primaryKeyColumnName));
 				}
+				primaryKeysResultSet.close();
 
 				for (Entry<String, List<ColumnDefinition>> primaryKeyEntry : primaryKeys.entrySet()) {
 					String pkName = primaryKeyEntry.getKey();
@@ -297,7 +315,7 @@ public class JdbcService {
 				}
 
 				// imported keys mean imported primary keys from other tables
-				ResultSet importedKeysResultSet = databaseMetaData.getImportedKeys(null, null, tableName);
+				ResultSet importedKeysResultSet = databaseMetaData.getImportedKeys(null, schemaName, tableName);
 				Map<String, List<ColumnDefinition>> fkFkColumns = new HashMap<>();
 				Map<String, List<ColumnDefinition>> fkPkColumns = new HashMap<>();
 				Map<String, String> fkPkTableNames = new HashMap<>();
@@ -324,6 +342,7 @@ public class JdbcService {
 					List<ColumnDefinition> foreignKeyPkColumnDefinitions = fkPkColumns.get(fkName);
 					foreignKeyPkColumnDefinitions.add(new ColumnDefinition(schema.addTable(pkTableName), pkColumnName));
 				}
+				importedKeysResultSet.close();
 
 				for (String fkName : fkPkNames.keySet()) {
 					String pkTableName = fkPkTableNames.get(fkName);
@@ -337,7 +356,7 @@ public class JdbcService {
 					uniqueConstraint.addReferencingForeignKey(foreignKey);
 				}
 				
-				ResultSet columns = databaseMetaData.getColumns(null, null, tableName, null);
+				ResultSet columns = databaseMetaData.getColumns(null, schemaName, tableName, null);
 				List<ColumnDefinition> columnDefinitions = new ArrayList<>();
 				while (columns.next()) {
 					String columnName = columns.getString("COLUMN_NAME");
@@ -348,8 +367,10 @@ public class JdbcService {
 //					String isAutoIncrement = columns.getString("IS_AUTOINCREMENT");
 					columnDefinitions.add(new ColumnDefinition(schema.addTable(tableName), columnName));
 				}
+				columns.close();
 				schema.getTableDefinitionByName(tableName).get().setColumnDefinitions(columnDefinitions);
 			}
+			conn.close();
 		} catch (ClassNotFoundException | SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
