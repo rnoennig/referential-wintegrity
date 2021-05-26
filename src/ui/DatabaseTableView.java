@@ -17,14 +17,14 @@ import domain.TableCell;
 import domain.ri.TableDefinition;
 
 /**
- * TODO sort by primary key columns by default
+ *
  *
  */
 public class DatabaseTableView extends TableView {
 	private static final long serialVersionUID = 1L;
 
 	public DatabaseTableView(DatabaseTable table) {
-		super(table);
+		super(table, false);
 		TableModel model = this.jTable.getModel();
 		TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>(model) {
 			@Override
@@ -39,7 +39,7 @@ public class DatabaseTableView extends TableView {
 		if (tableDefinition.getPrimaryKey().isPresent()) {
 			List<RowSorter.SortKey> sortKeys = new ArrayList<>();
 			for (Integer pkIndex : tableDefinition.getPrimaryKeyColumnIndexes()) {
-				sortKeys.add(new RowSorter.SortKey(pkIndex, SortOrder.ASCENDING));
+				sortKeys.add(new RowSorter.SortKey(pkIndex.intValue(), SortOrder.ASCENDING));
 			}
 			sorter.setSortKeys(sortKeys);
 		}

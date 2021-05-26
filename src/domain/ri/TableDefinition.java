@@ -75,8 +75,7 @@ public class TableDefinition {
 	public void acceptForeignKeyVisitor(SchemaVisitor schemaVisitor) {
 		schemaVisitor.visit(this);
 		
-		List<ForeignKey> foreignKeys = this.getForeignKeys();
-		for (ForeignKey foreignKey : foreignKeys) {
+		for (ForeignKey foreignKey : this.foreignKeys) {
 			Constraint referencedConstraint = foreignKey.getReferencedConstraint();
 			String pkTableName = referencedConstraint.getTableName();
 			TableDefinition tableDefinitionByName = schema.getTableDefinitionByName(pkTableName).get();
@@ -85,7 +84,7 @@ public class TableDefinition {
 	}
 
 	public List<Integer> getPrimaryKeyColumnIndexes() {
-		return primaryKey.getColumnDefinitions().stream().map(c -> this.columnDefinitions.indexOf(c)).collect(Collectors.toList());
+		return primaryKey.getColumnDefinitions().stream().map(c -> Integer.valueOf(this.columnDefinitions.indexOf(c))).collect(Collectors.toList());
 	}
 
 	public boolean hasPrimaryKey() {

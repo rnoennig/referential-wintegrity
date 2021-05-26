@@ -1,6 +1,5 @@
 package ui;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -67,19 +66,19 @@ public class Main {
 
 			@Override
 			protected void done() {
-				// DEMO
-				try {
-					get();
-				} catch (InterruptedException | ExecutionException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				DatabaseTableRow row = jdbcProvider
-						.selectRows("greatgrandparent", Arrays.asList("id"),Arrays.asList(1)).getTableRows()
-						.get(0);
-				JPanel panel = addTab(tabPane, "TEST");
-				addDependentRowsTableViews(panel, row);
-				// DEMO
+//				// DEMO
+//				try {
+//					get();
+//				} catch (InterruptedException | ExecutionException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//				DatabaseTableRow row = jdbcProvider
+//						.selectRows("greatgrandparent", Arrays.asList("id"),Arrays.asList(Integer.valueOf(1))).getTableRows()
+//						.get(0);
+//				JPanel panel = addTab(tabPane, "TEST");
+//				addDependentRowsTableViews(panel, row);
+//				// DEMO
 			}
 		};
 		swingWorker.execute();
@@ -103,14 +102,14 @@ public class Main {
 			@Override
 			protected void done() {
 				try {
-					TableView allTablesView;
-					allTablesView = new TableView(get());
+					TableView allTablesView = new TableView(get(), true);
 					allTablesView.addClicklistener(new ClickAdapter() {
 						@Override
 						public void cellSelected(TableRow row, TableCell cell) {
 							String tableName = cell.getValue().toString();
 							JPanel panel = addTab(tabPane, tableName);
 							createRowSelectionView(tabPane, tableName, panel);
+							tabPane.setSelectedIndex(tabPane.getTabCount()-1);
 						}
 					});
 					eastWestPanel.setLeftComponent(allTablesView);
@@ -155,11 +154,13 @@ public class Main {
 							
 							String tabTitle = row.getTableName() + "#" + primaryKey.get().getColumnDefinitions() + "="
 									+ row.getColumnValues(primaryKey.get().getColumnDefinitions());
-							JPanel panel = addTab(tabPane, tabTitle);
-							addDependentRowsTableViews(panel, (DatabaseTableRow)row);
+							JPanel tabPanel = addTab(tabPane, tabTitle);
+							addDependentRowsTableViews(tabPanel, (DatabaseTableRow)row);
+							tabPane.setSelectedIndex(tabPane.getTabCount()-1);
 						}
 					});
 					panel.add(tableView);
+					panel.revalidate();
 				} catch (InterruptedException | ExecutionException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -187,8 +188,8 @@ public class Main {
 				try {
 					for (DatabaseTable dependentTables : get()) {
 						panel.add(new DatabaseTableView(dependentTables));
+						panel.revalidate();
 					}
-					panel.revalidate();
 				} catch (InterruptedException | ExecutionException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

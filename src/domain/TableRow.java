@@ -1,6 +1,5 @@
 package domain;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,7 +37,7 @@ public class TableRow {
 	}
 
 	public Object getColumnValue(String columnName) {
-		List<String> columnNames = Arrays.stream(this.table.getColumnNames()).map(x -> x.toLowerCase()).collect(Collectors.toList());
+		List<String> columnNames = this.table.getColumnNames();
 		int columnIndex = columnNames.indexOf(columnName.toLowerCase());
 		return this.values.get(columnIndex).getValue();
 	}

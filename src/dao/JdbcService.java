@@ -10,6 +10,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -123,24 +124,24 @@ public class JdbcService {
 			databaseTable.setData(rows);
 		}
 		List<DatabaseTable> tables = new ArrayList<>(databaseTableRowsByTable.keySet());
-//		Collections.sort(tables, new Comparator<>() {
-//
-//			@Override
-//			public int compare(DatabaseTable a, DatabaseTable b) {
-//				TableDefinition tableDefinitionA = schema.getTableDefinitionByName(a.getTableName()).get();
-//				TableDefinition tableDefinitionB = schema.getTableDefinitionByName(b.getTableName()).get();
-//				
-//				if (tableDefinitionA.dependsOn(tableDefinitionB)) {
-//					return 1;
-//				}
-//				
-//				if (tableDefinitionB.dependsOn(tableDefinitionA)) {
-//					return -1;
-//				}
-//				
-//				return tableDefinitionA.getTableName().compareTo(tableDefinitionB.getTableName());
-//			}
-//		});
+		Collections.sort(tables, new Comparator<>() {
+
+			@Override
+			public int compare(DatabaseTable a, DatabaseTable b) {
+				TableDefinition tableDefinitionA = schema.getTableDefinitionByName(a.getTableName()).get();
+				TableDefinition tableDefinitionB = schema.getTableDefinitionByName(b.getTableName()).get();
+				
+				if (tableDefinitionA.dependsOn(tableDefinitionB)) {
+					return 1;
+				}
+				
+				if (tableDefinitionB.dependsOn(tableDefinitionA)) {
+					return -1;
+				}
+				
+				return tableDefinitionA.getTableName().compareTo(tableDefinitionB.getTableName());
+			}
+		});
 		return tables;
 	}
 
@@ -224,7 +225,11 @@ public class JdbcService {
 		if (whereColumnNames != null && !whereColumnNames.isEmpty()) {
 			sb.append(" where ");
 		}
-		for (String columnName : whereColumnNames) {
+		for (int i = 0; i < whereColumnNames.size(); i++) {
+			String columnName = whereColumnNames.get(i);
+			if (i > 0) {
+				sb.append(" AND ");
+			}
 			sb.append(stmtFormat.enquoteIdentifier(columnName, false));
 			sb.append(" = ?");
 		}

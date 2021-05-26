@@ -10,7 +10,7 @@ import java.util.List;
 public class Table {
 	List<? extends TableRow> data;
 	List<TableCell> header;
-	String[] columnNames;
+	List<String> columnNames;
 	protected String tableName;
 	public List<? extends TableRow> getTableRows() {
 		return data;
@@ -20,11 +20,11 @@ public class Table {
 		this.data = data;
 	}
 
-	public String[] getColumnNames() {
+	public List<String> getColumnNames() {
 		return columnNames;
 	}
 
-	public void setColumnNames(String... columnNames) {
+	public void setColumnNames(List<String> columnNames) {
 		this.columnNames = columnNames;
 	}
 
@@ -41,7 +41,7 @@ public class Table {
 	}
 
 	public int getColumnCount() {
-		return this.columnNames.length;
+		return this.columnNames.size();
 	}
 
 	@Override
@@ -75,5 +75,22 @@ public class Table {
 
 	public void setHeader(List<TableCell> header) {
 		this.header = header;
+	}
+
+	public int getColumnIndex(String columnName) {
+		return this.columnNames.indexOf(columnName);
+	}
+
+	public int getMaxColumnSize(TextWidthCalculator textWidthCalculator, String columnName) {
+		int maxLength = 0;
+		for (TableRow tableRow : data) {
+			Object columnValue = tableRow.getColumnValue(columnName);
+			if (columnValue == null) {
+				continue;
+			}
+			int len = textWidthCalculator.calculate(columnValue.toString());
+			maxLength = len > maxLength ? len : maxLength; 
+		}
+		return maxLength;
 	}
 }

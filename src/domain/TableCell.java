@@ -1,7 +1,5 @@
 package domain;
 
-import domain.ri.TableDefinition;
-
 public class TableCell {
 
 	protected Object value;

@@ -1,9 +1,12 @@
 package ui;
 
+import java.awt.Canvas;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -15,6 +18,8 @@ import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
 import domain.Table;
@@ -22,18 +27,24 @@ import domain.TableCell;
 
 public class TableView extends JPanel {
 	private static final long serialVersionUID = 1L;
+	
 	private List<ClickAdapter> clickAdapters = new LinkedList<>();
+	
 	protected JTable jTable;
-	private Table table;
+	
+	protected Table table;
+	
+	private boolean autoWidth = false;
 
-	public TableView(Table table) {
+	public TableView(Table table, boolean autoWidth) {
 		super();
 		this.table = table;
+		this.autoWidth = autoWidth;
 
 		this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
 		JLabel label = new JLabel(table.getTableName());
-		label.setAlignmentX(Component.CENTER_ALIGNMENT);
+		label.setAlignmentX(Component.LEFT_ALIGNMENT);
 		this.add(label);
 
 		TableModel dm = new AbstractTableModel() {
@@ -63,7 +74,7 @@ public class TableView extends JPanel {
 
 			@Override
 			public String getColumnName(int column) {
-				return table.getColumnNames()[column];
+				return table.getColumnNames().get(column);
 			}
 		};
 
@@ -87,6 +98,10 @@ public class TableView extends JPanel {
 		jTable.setDefaultRenderer(Object.class,
 				createStylePresevingCellRenderer(jTable.getDefaultRenderer(Object.class)));
 		
+		if (!autoWidth) {
+			resizeToFitContent(true);
+		}
+		
 		// if the table doesn't specify a preferred scrollable viewport size the default
 		// scrollpane size is larger than the table
 		int numOfVisibleRows = table.getRowCount();
@@ -106,10 +121,39 @@ public class TableView extends JPanel {
 			public Dimension getMaximumSize() {
 				int maxHeight = 200;
 				// 10000 means grab as much width as possible
-				return new Dimension(10000, Math.min(getPreferredSize().height, maxHeight));
+				int width = 10000;
+				if (!TableView.this.autoWidth) {
+					width = getPreferredSize().width;
+				}
+				return new Dimension(width, Math.min(getPreferredSize().height, maxHeight));
 			}
 		};
+		scrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
 		this.add(scrollPane);
+	}
+
+	private void resizeToFitContent(boolean includeHeader) {
+		TableColumnModel columnModel = jTable.getColumnModel();
+		Iterator<TableColumn> it = columnModel.getColumns().asIterator();
+		while(it.hasNext() && !autoWidth) {
+			TableColumn col = it.next();
+			String columnName = col.getHeaderValue().toString();
+			Canvas c = new Canvas();
+			FontMetrics metrics = c.getFontMetrics(getFont());
+			int colCharLength = this.table.getMaxColumnSize(x -> metrics.stringWidth(x), columnName);
+			int preferredWidth = Math.max(colCharLength, metrics.stringWidth(columnName));
+			System.out.println("Column "+columnName+" needs "+preferredWidth+" width");
+			col.setPreferredWidth(preferredWidth);
+			col.setMinWidth(preferredWidth);
+		}
+	}
+
+	public boolean isAutoWidth() {
+		return autoWidth;
+	}
+
+	public void setAutoWidth(boolean autoWidth) {
+		this.autoWidth = autoWidth;
 	}
 
 	public void addClicklistener(ClickAdapter clickAdapter) {
@@ -121,16 +165,16 @@ public class TableView extends JPanel {
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+			public Component getTableCellRendererComponent(JTable tableForRendering, Object value, boolean isSelected,
 					boolean hasFocus, int row, int column) {
-				final Component result = tableCellRenderer.getTableCellRendererComponent(table, value, isSelected,
+				final Component result = tableCellRenderer.getTableCellRendererComponent(tableForRendering, value, isSelected,
 						hasFocus, row, column);
 				
 				Object cell;
 				if (row < 0) {
-					cell = TableView.this.table.getTableHeader().get(table.convertColumnIndexToModel(column));
+					cell = TableView.this.table.getTableHeader().get(tableForRendering.convertColumnIndexToModel(column));
 				} else {
-					cell = table.getValueAt(row, column);
+					cell = tableForRendering.getValueAt(row, column);
 				}
 				if (cell instanceof TableCell) {
 					renderCell((JLabel) tableCellRenderer, result, (TableCell)cell);
@@ -143,7 +187,8 @@ public class TableView extends JPanel {
 	}
 
 	protected void renderCell(JLabel tableCellRenderer, Component result, TableCell cell) {
-		String cellText = cell.getValue().toString();
+		Object value = cell.getValue();
+		String cellText = value == null ? "<NULL>" : value.toString();
 		tableCellRenderer.setText(cellText);
 	}
 }
