@@ -188,7 +188,23 @@ public class TableView extends JPanel {
 
 	protected void renderCell(JLabel tableCellRenderer, Component result, TableCell cell) {
 		Object value = cell.getValue();
-		String cellText = value == null ? "<NULL>" : value.toString();
+		String cellText = value == null ? "<NULL>" : renderCellType(value);
 		tableCellRenderer.setText(cellText);
+	}
+
+	private String renderCellType(Object cellValue) {
+		try {
+			if (cellValue instanceof oracle.sql.TIMESTAMPTZ) {
+				return ((oracle.sql.TIMESTAMPTZ) cellValue).localDateTimeValue().toString();
+			}
+		} catch (SQLException e) {
+			// ignore
+		}
+		
+		return cellValue.toString();
+	}
+
+	public Table getTable() {
+		return this.table;
 	}
 }
