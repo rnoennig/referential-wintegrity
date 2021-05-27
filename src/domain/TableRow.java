@@ -37,7 +37,7 @@ public class TableRow {
 	}
 
 	public Object getColumnValue(String columnName) {
-		List<String> columnNames = this.table.getColumnNames();
+		List<String> columnNames = this.table.getColumnNames().stream().map(String::toLowerCase).collect(Collectors.toList());
 		int columnIndex = columnNames.indexOf(columnName.toLowerCase());
 		return this.values.get(columnIndex).getValue();
 	}
