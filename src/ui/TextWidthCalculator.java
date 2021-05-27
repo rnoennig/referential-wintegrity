@@ -1,4 +1,4 @@
-package domain;
+package ui;
 
 @FunctionalInterface
 public interface TextWidthCalculator {

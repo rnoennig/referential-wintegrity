@@ -1,14 +1,12 @@
 package ui;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-import javax.swing.BoxLayout;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingWorker;
@@ -16,6 +14,7 @@ import javax.swing.SwingWorker;
 import dao.JdbcService;
 import domain.DatabaseTable;
 import domain.DatabaseTableRow;
+import domain.DatabaseTableViewGroup;
 import domain.Table;
 import domain.TableCell;
 import domain.TableRow;
@@ -23,9 +22,10 @@ import domain.ri.PrimaryKey;
 import domain.ri.Schema;
 
 public class Main {
+	
+	private static final Main main = new Main();
 
 	public static void main(String[] args) {
-		Main main = new Main();
 		main.setJdbcProvider(new JdbcService());
 		main.run();
 	}
@@ -38,6 +38,10 @@ public class Main {
 
 	public void setJdbcProvider(JdbcService jdbcProvider) {
 		this.jdbcProvider = jdbcProvider;
+	}
+	
+	public static Main getInstance() {
+		return main;
 	}
 
 	private void run() {
@@ -67,17 +71,20 @@ public class Main {
 			@Override
 			protected void done() {
 //				// DEMO
-//				try {
-//					get();
-//				} catch (InterruptedException | ExecutionException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-//				DatabaseTableRow row = jdbcProvider
-//						.selectRows("greatgrandparent", Arrays.asList("id"),Arrays.asList(Integer.valueOf(1))).getTableRows()
-//						.get(0);
-//				JPanel panel = addTab(tabPane, "TEST");
-//				addDependentRowsTableViews(panel, row);
+				try {
+					get();
+				} catch (InterruptedException | ExecutionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				DatabaseTableRow row = jdbcProvider
+						.selectRows("greatgrandparent", Arrays.asList("id"),Arrays.asList(Integer.valueOf(1))).getTableRows()
+						.get(0);
+				String tabTitle = "TEST";
+				DependentRowsTab dependentRowsTab = new DependentRowsTab(tabPane, tabTitle);
+				addDependentRowsTableViews(dependentRowsTab, (DatabaseTableRow)row);
+				int tabIndex = tabPane.getTabCount() - 1;
+				tabPane.setSelectedIndex(tabIndex);
 //				// DEMO
 			}
 		};
@@ -107,8 +114,8 @@ public class Main {
 						@Override
 						public void cellSelected(TableRow row, TableCell cell) {
 							String tableName = cell.getValue().toString();
-							JPanel panel = addTab(tabPane, tableName);
-							createRowSelectionView(tabPane, tableName, panel);
+							Tab tab = new Tab(tabPane, tableName);
+							createRowSelectionView(tabPane, tableName, tab.getContentComponent());
 							tabPane.setSelectedIndex(tabPane.getTabCount()-1);
 						}
 					});
@@ -154,9 +161,10 @@ public class Main {
 							
 							String tabTitle = row.getTableName() + "#" + primaryKey.get().getColumnDefinitions() + "="
 									+ row.getColumnValues(primaryKey.get().getColumnDefinitions());
-							JPanel tabPanel = addTab(tabPane, tabTitle);
-							addDependentRowsTableViews(tabPanel, (DatabaseTableRow)row);
-							tabPane.setSelectedIndex(tabPane.getTabCount()-1);
+							DependentRowsTab dependentRowsTab = new DependentRowsTab(tabPane, tabTitle);
+							addDependentRowsTableViews(dependentRowsTab, (DatabaseTableRow)row);
+							int tabIndex = tabPane.getTabCount() - 1;
+							tabPane.setSelectedIndex(tabIndex);
 						}
 					});
 					panel.add(tableView);
@@ -172,11 +180,11 @@ public class Main {
 
 	/**
 	 * 
-	 * @param panel
+	 * @param tab
 	 * @param row
 	 * @return a panel with all table and all dependant rows for the given row
 	 */
-	protected void addDependentRowsTableViews(JComponent panel, DatabaseTableRow row) {
+	protected void addDependentRowsTableViews(Tab tab, DatabaseTableRow row) {
 		SwingWorker<List<DatabaseTable>, Void> swingWorker = new SwingWorker<List<DatabaseTable>, Void>() {
 			@Override
 			protected List<DatabaseTable> doInBackground() throws Exception {
@@ -186,9 +194,12 @@ public class Main {
 			@Override
 			protected void done() {
 				try {
+					DatabaseTableViewGroup databaseTableGroup = new DatabaseTableViewGroup();
+					tab.addActionListener(databaseTableGroup);
 					for (DatabaseTable dependentTables : get()) {
-						panel.add(new DatabaseTableView(dependentTables));
-						panel.revalidate();
+						DatabaseTableView databaseTableView = new DatabaseTableView(dependentTables);
+						databaseTableGroup.add(databaseTableView);
+						tab.addContentComponent(databaseTableView);
 					}
 				} catch (InterruptedException | ExecutionException e) {
 					// TODO Auto-generated catch block
@@ -197,23 +208,6 @@ public class Main {
 			}
 		};
 		swingWorker.execute();
-	}
-
-	/**
-	 * adds a new tab to the tab pane
-	 * 
-	 * @param tabPane
-	 * @param tabTitle
-	 * @param component
-	 * @return a panel to add components to which will make up the scrollable tab
-	 *         pane's content
-	 */
-	protected JPanel addTab(JTabbedPane tabPane, String tabTitle) {
-		JPanel panel = new JPanel();
-		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-		JScrollPane scrollpane = new JScrollPane(panel);
-		tabPane.addTab(tabTitle, scrollpane);
-		return panel;
 	}
 
 }

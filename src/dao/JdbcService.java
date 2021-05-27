@@ -384,4 +384,88 @@ public class JdbcService {
 		return schema;
 	}
 
+	public List<String> toInsertStatements(DatabaseTable table) {
+		List<String> result = new ArrayList<>();
+		try {
+			Connection conn = createConnection();
+			Statement stmtFormat = conn.createStatement();
+			DatabaseTypeFormatter databaseTypeFormatter = new DatabaseTypeFormatter();
+			for (DatabaseTableRow row: table.getTableRows()) {
+				String stmt = toInsertStatement(row, stmtFormat, databaseTypeFormatter, conn);
+				result.add(stmt);
+			}
+			stmtFormat.close();
+			conn.close();
+		} catch (SQLException | ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	private String toInsertStatement(DatabaseTableRow row, Statement stmtFormat, DatabaseTypeFormatter databaseTypeFormatter, Connection conn) throws SQLException {
+		StringBuilder sb = new StringBuilder();
+		sb.append("INSERT INTO ");
+		sb.append(stmtFormat.enquoteIdentifier(row.getTableName(), false));
+		sb.append(" (");
+		List<ColumnDefinition> columns = row.getTable().getTableDefinition().getColumnDefinitions();
+		for (int i = 0; i < columns.size(); i++) {
+			ColumnDefinition col = columns.get(i);
+			if (i > 0) {
+				sb.append(", ");
+			}
+			sb.append(stmtFormat.enquoteIdentifier(col.getColumnName(), false));
+		}
+		sb.append(") VALUES (");
+		for (int i = 0; i < columns.size(); i++) {
+			if (i > 0) {
+				sb.append(", ");
+			}
+			sb.append(databaseTypeFormatter.format(row.getColumnValue(i), stmtFormat));
+		}
+		sb.append(");");
+		return sb.toString();
+	}
+	
+	
+
+	public List<String> toDeleteStatements(DatabaseTable table) {
+		List<String> result = new ArrayList<>();
+		try {
+			Connection conn = createConnection();
+			Statement stmtFormat = conn.createStatement();
+			DatabaseTypeFormatter databaseTypeFormatter = new DatabaseTypeFormatter();
+			for (DatabaseTableRow row: table.getTableRows()) {
+				String stmt = toDeleteStatement(row, stmtFormat, databaseTypeFormatter, conn);
+				result.add(stmt);
+			}
+			stmtFormat.close();
+			conn.close();
+		} catch (SQLException | ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	private String toDeleteStatement(DatabaseTableRow row, Statement stmtFormat,
+			DatabaseTypeFormatter databaseTypeFormatter, Connection conn) throws SQLException {
+		StringBuilder sb = new StringBuilder();
+		sb.append("DELETE FROM ");
+		sb.append(stmtFormat.enquoteIdentifier(row.getTableName(), false));
+		sb.append(" WHERE ");
+		List<ColumnDefinition> columns = row.getTable().getTableDefinition().getPrimaryKey().get().getColumnDefinitions();
+		for (int i = 0; i < columns.size(); i++) {
+			ColumnDefinition col = columns.get(i);
+			if (i > 0) {
+				sb.append(" AND ");
+			}
+			sb.append(stmtFormat.enquoteIdentifier(col.getColumnName(), false));
+			sb.append(" = ");
+			sb.append(databaseTypeFormatter.format(row.getColumnValue(i), stmtFormat));
+		}
+		sb.append(";");
+		return sb.toString();
+	}
+
 }

@@ -2,6 +2,8 @@ package domain;
 
 import java.util.List;
 
+import ui.TextWidthCalculator;
+
 /**
  * Represents a set of {@link TableRow}s
  * @author wiesel

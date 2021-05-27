@@ -17,7 +17,7 @@ import domain.TableCell;
 import domain.ri.TableDefinition;
 
 /**
- *
+ * TableView with the content of physical database columns as table columns
  *
  */
 public class DatabaseTableView extends TableView {
@@ -29,7 +29,6 @@ public class DatabaseTableView extends TableView {
 		TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>(model) {
 			@Override
 			public int getViewRowCount() {
-//				System.out.println("-----------> getViewRowCount for table "+table.getTableName()+" is " + super.getViewRowCount());
 				return super.getViewRowCount();
 			}
 		};
@@ -43,6 +42,10 @@ public class DatabaseTableView extends TableView {
 			}
 			sorter.setSortKeys(sortKeys);
 		}
+	}
+	
+	public DatabaseTable getTable() {
+		return (DatabaseTable) this.table;
 	}
 	
 	@Override
