@@ -1,7 +1,14 @@
 package domain.ri;
 
+import java.util.Set;
+
 public abstract class SchemaVisitor {
+	protected Set<TableDefinition> visited;
+	
 	protected boolean found = false;
+	public SchemaVisitor(Set<TableDefinition> visited) {
+		this.visited = visited;
+	}
 	public boolean isFound() {
 		return found;
 	}

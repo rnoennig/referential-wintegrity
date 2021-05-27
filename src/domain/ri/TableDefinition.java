@@ -1,6 +1,7 @@
 package domain.ri;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -59,21 +60,27 @@ public class TableDefinition {
 	}
 
 	public boolean dependsOn(TableDefinition tableDefinitionB) {
-		SchemaVisitor schemaVisitor = new SchemaVisitor() {
+		SchemaVisitor schemaVisitor = new SchemaVisitor(new HashSet<>()) {
 			@Override
 			public boolean visit(TableDefinition tableDefinition) {
+				if (this.visited.contains(tableDefinition)) {
+					return false;
+				}
 				if (tableDefinition.equals(tableDefinitionB)) {
 					found = true;
 				}
-				return false;
+				this.visited.add(tableDefinition);
+				return true;
 			}
 		};
 		this.acceptForeignKeyVisitor(schemaVisitor);
 		return schemaVisitor.isFound();
 	}
-	
+
 	public void acceptForeignKeyVisitor(SchemaVisitor schemaVisitor) {
-		schemaVisitor.visit(this);
+		if (!schemaVisitor.visit(this)) {
+			return;
+		}
 		
 		for (ForeignKey foreignKey : this.foreignKeys) {
 			Constraint referencedConstraint = foreignKey.getReferencedConstraint();
