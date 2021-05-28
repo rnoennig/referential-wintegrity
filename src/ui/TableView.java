@@ -143,7 +143,6 @@ public class TableView extends JPanel {
 			FontMetrics metrics = c.getFontMetrics(getFont());
 			int colCharLength = this.table.getMaxColumnSize(x -> metrics.stringWidth(x), columnName);
 			int preferredWidth = Math.max(colCharLength, metrics.stringWidth(columnName));
-			System.out.println("Column "+columnName+" needs "+preferredWidth+" width");
 			col.setPreferredWidth(preferredWidth);
 			col.setMinWidth(preferredWidth);
 		}

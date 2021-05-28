@@ -15,6 +15,7 @@ import dao.JdbcService;
 import domain.DatabaseTable;
 import domain.DatabaseTableRow;
 import domain.DatabaseTableViewGroup;
+import domain.DependentDatabaseTableRowsQuery;
 import domain.Table;
 import domain.TableCell;
 import domain.TableRow;
@@ -182,32 +183,23 @@ public class Main {
 	 * 
 	 * @param tab
 	 * @param row
-	 * @return a panel with all table and all dependant rows for the given row
+	 * @return a panel with all table and all dependent rows for the given row
 	 */
 	protected void addDependentRowsTableViews(Tab tab, DatabaseTableRow row) {
-		SwingWorker<List<DatabaseTable>, Void> swingWorker = new SwingWorker<List<DatabaseTable>, Void>() {
-			@Override
-			protected List<DatabaseTable> doInBackground() throws Exception {
-				return Main.this.jdbcProvider.getDependentRows(row);
-			}
+		DatabaseTableViewGroup databaseTableGroup = new DatabaseTableViewGroup(tab);
+		DependentDatabaseTableRowsQuery dependentRowsQuery = new DependentDatabaseTableRowsQuery(row) {
 
 			@Override
-			protected void done() {
-				try {
-					DatabaseTableViewGroup databaseTableGroup = new DatabaseTableViewGroup();
-					tab.addActionListener(databaseTableGroup);
-					for (DatabaseTable dependentTables : get()) {
-						DatabaseTableView databaseTableView = new DatabaseTableView(dependentTables);
-						databaseTableGroup.add(databaseTableView);
-						tab.addContentComponent(databaseTableView);
-					}
-				} catch (InterruptedException | ExecutionException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+			protected void done(List<DatabaseTable> result) {
+				for (DatabaseTable dependentTables : result) {
+					DatabaseTableView databaseTableView = new DatabaseTableView(dependentTables);
+					databaseTableGroup.add(databaseTableView);
 				}
 			}
 		};
-		swingWorker.execute();
+		databaseTableGroup.setDependentRowsQuery(dependentRowsQuery);
+		tab.addActionListener(databaseTableGroup);
+		databaseTableGroup.executeQuery();
 	}
 
 }
