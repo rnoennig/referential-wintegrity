@@ -1,5 +1,6 @@
 package ui;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 import java.util.ArrayList;
@@ -55,6 +56,10 @@ public class DatabaseTableView extends TableView {
 		
 		if (((DatabaseTableCell)cell).isPrimaryKey()) {
 			result.setFont(result.getFont().deriveFont(Font.BOLD, result.getFont().getSize()));
+			result.setForeground(Color.BLACK);
+		}
+		if (((DatabaseTableCell)cell).isForeignKey()) {
+			result.setForeground(Color.RED);
 		}
 	}
 }

@@ -69,4 +69,8 @@ public class Tab {
 		return tabPane.getSelectedComponent() == this.scrollpane;
 	}
 
+	public JTabbedPane getTabPane() {
+		return tabPane;
+	}
+
 }

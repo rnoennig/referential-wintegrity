@@ -1,8 +1,10 @@
 package domain;
 
+import java.util.List;
 import java.util.Optional;
 
 import domain.ri.ColumnDefinition;
+import domain.ri.ForeignKey;
 import domain.ri.PrimaryKey;
 import domain.ri.TableDefinition;
 
@@ -41,6 +43,12 @@ public class DatabaseTableCell extends TableCell {
 			return primaryKey.get().getColumnNames().contains(this.columnDefinition.getColumnName());
 		}
 		return false;
+	}
+
+	public boolean isForeignKey() {
+		return tableDefinition.getForeignKeys().stream()
+				.flatMap(fk -> fk.getColumnDefinitions().stream())
+				.anyMatch(cd -> cd.equals(this.columnDefinition));
 	}
 
 }

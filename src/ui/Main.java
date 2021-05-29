@@ -60,6 +60,8 @@ public class Main {
 
 		createTableSelectionView(tabPane, eastWestPanel);
 
+		// setting left component to null prevents a button from being displayed
+		eastWestPanel.setLeftComponent(null);
 		eastWestPanel.setRightComponent(tabPane);
 
 		SwingWorker<Schema, Void> swingWorker = new SwingWorker<Schema, Void>() {
@@ -149,25 +151,7 @@ public class Main {
 			protected void done() {
 				try {
 					TableView tableView = new DatabaseTableView(get());
-					tableView.addClicklistener(new ClickAdapter() {
-						@Override
-						public void cellSelected(TableRow row, TableCell cell) {
-							// FIXME check unique constraints too, not only primary keys
-							Optional<PrimaryKey> primaryKey = ((DatabaseTable)row.getTable()).getTableDefinition().getPrimaryKey();
-							if (primaryKey.isEmpty()) {
-								// TODO show some kind of error message, that no PK is defined?
-								System.err.println("Cannot open dependend[ent|ing] rows because no primary key was found");
-								return;
-							}
-							
-							String tabTitle = row.getTableName() + "#" + primaryKey.get().getColumnDefinitions() + "="
-									+ row.getColumnValues(primaryKey.get().getColumnDefinitions());
-							DependentRowsTab dependentRowsTab = new DependentRowsTab(tabPane, tabTitle);
-							addDependentRowsTableViews(dependentRowsTab, (DatabaseTableRow)row);
-							int tabIndex = tabPane.getTabCount() - 1;
-							tabPane.setSelectedIndex(tabIndex);
-						}
-					});
+					tableView.addClicklistener(createDependentRowClickListener(tabPane));
 					panel.add(tableView);
 					panel.revalidate();
 				} catch (InterruptedException | ExecutionException e) {
@@ -177,6 +161,28 @@ public class Main {
 			}
 		};
 		swingWorker.execute();
+	}
+	
+	protected ClickAdapter createDependentRowClickListener(JTabbedPane tabPane) {
+		return new ClickAdapter() {
+			@Override
+			public void cellSelected(TableRow row, TableCell cell) {
+				// FIXME check unique constraints too, not only primary keys
+				Optional<PrimaryKey> primaryKey = ((DatabaseTable)row.getTable()).getTableDefinition().getPrimaryKey();
+				if (primaryKey.isEmpty()) {
+					// TODO show some kind of error message, that no PK is defined?
+					System.err.println("Cannot open dependend[ent|ing] rows because no primary key was found");
+					return;
+				}
+				
+				String tabTitle = row.getTableName() + "#" + primaryKey.get().getColumnDefinitions() + "="
+						+ row.getColumnValues(primaryKey.get().getColumnDefinitions());
+				DependentRowsTab dependentRowsTab = new DependentRowsTab(tabPane, tabTitle);
+				addDependentRowsTableViews(dependentRowsTab, (DatabaseTableRow)row);
+				int tabIndex = tabPane.getTabCount() - 1;
+				tabPane.setSelectedIndex(tabIndex);
+			}
+		};
 	}
 
 	/**
@@ -193,6 +199,7 @@ public class Main {
 			protected void done(List<DatabaseTable> result) {
 				for (DatabaseTable dependentTables : result) {
 					DatabaseTableView databaseTableView = new DatabaseTableView(dependentTables);
+					databaseTableView.addClicklistener(createDependentRowClickListener(tab.getTabPane()));
 					databaseTableGroup.add(databaseTableView);
 				}
 			}

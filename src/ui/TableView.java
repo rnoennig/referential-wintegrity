@@ -88,9 +88,10 @@ public class TableView extends JPanel {
 					return;
 				}
 				int row = jTable.rowAtPoint(e.getPoint());
+				int rowModelIndex = jTable.convertRowIndexToModel(row);
 				int col = jTable.columnAtPoint(e.getPoint());
 				for (ClickAdapter clickAdapter : clickAdapters) {
-					clickAdapter.cellSelected(table.getTableRows().get(row), (TableCell)jTable.getValueAt(row, col));
+					clickAdapter.cellSelected(table.getTableRows().get(rowModelIndex), (TableCell)jTable.getValueAt(row, col));
 				}
 			}
 		});
