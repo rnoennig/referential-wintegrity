@@ -37,6 +37,8 @@ public class TableView extends JPanel {
 	
 	private boolean autoWidth = false;
 
+	private boolean autoHeight;
+
 	public TableView(Table table, boolean autoWidth) {
 		super();
 		this.table = table;
@@ -101,7 +103,7 @@ public class TableView extends JPanel {
 				createStylePresevingCellRenderer(jTable.getDefaultRenderer(Object.class)));
 		
 		if (!autoWidth) {
-			resizeToFitContent(true);
+			resizeColumnsToFitContent(true);
 		}
 		
 		// if the table doesn't specify a preferred scrollable viewport size the default
@@ -111,7 +113,7 @@ public class TableView extends JPanel {
 		int rows = jTable.getRowHeight() * numOfVisibleRows;
 		Dimension d = new Dimension(cols, rows);
 		jTable.setPreferredScrollableViewportSize(d);
-
+		
 		JScrollPane scrollPane = new JScrollPane(jTable) {
 			private static final long serialVersionUID = 1L;
 
@@ -122,19 +124,27 @@ public class TableView extends JPanel {
 			@Override
 			public Dimension getMaximumSize() {
 				int maxHeight = 200;
-				// 10000 means grab as much width as possible
-				int width = 10000;
+				int height = getPreferredSize().height;
+				if (height > maxHeight) {
+					height = maxHeight;
+				}
+				if (TableView.this.autoHeight) 
+				{
+					height = getPreferredSize().height;
+				}
+				// MAX_VALUE means grab as much width as possible
+				int width = Integer.MAX_VALUE;
 				if (!TableView.this.autoWidth) {
 					width = getPreferredSize().width;
 				}
-				return new Dimension(width, Math.min(getPreferredSize().height, maxHeight));
+				return new Dimension(width, height);
 			}
 		};
 		scrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
 		this.add(scrollPane);
 	}
 
-	private void resizeToFitContent(boolean includeHeader) {
+	private void resizeColumnsToFitContent(boolean includeHeader) {
 		TableColumnModel columnModel = jTable.getColumnModel();
 		Iterator<TableColumn> it = columnModel.getColumns().asIterator();
 		while(it.hasNext() && !autoWidth) {
@@ -207,5 +217,9 @@ public class TableView extends JPanel {
 
 	public Table getTable() {
 		return this.table;
+	}
+
+	public void setAutoHeight(boolean autoHeight) {
+		this.autoHeight = autoHeight;
 	}
 }

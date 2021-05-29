@@ -1,10 +1,8 @@
 package domain;
 
-import java.util.List;
 import java.util.Optional;
 
 import domain.ri.ColumnDefinition;
-import domain.ri.ForeignKey;
 import domain.ri.PrimaryKey;
 import domain.ri.TableDefinition;
 

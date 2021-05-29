@@ -151,6 +151,7 @@ public class Main {
 			protected void done() {
 				try {
 					TableView tableView = new DatabaseTableView(get());
+					tableView.setAutoHeight(true);
 					tableView.addClicklistener(createDependentRowClickListener(tabPane));
 					panel.add(tableView);
 					panel.revalidate();
