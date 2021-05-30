@@ -19,8 +19,8 @@ import domain.DependentDatabaseTableRowsQuery;
 import domain.Table;
 import domain.TableCell;
 import domain.TableRow;
-import domain.ri.PrimaryKey;
 import domain.ri.Schema;
+import domain.ri.UniqueConstraint;
 
 public class Main {
 	
@@ -168,16 +168,16 @@ public class Main {
 		return new ClickAdapter() {
 			@Override
 			public void cellSelected(TableRow row, TableCell cell) {
-				// FIXME check unique constraints too, not only primary keys
-				Optional<PrimaryKey> primaryKey = ((DatabaseTable)row.getTable()).getTableDefinition().getPrimaryKey();
-				if (primaryKey.isEmpty()) {
+				Optional<UniqueConstraint> primaryUniqueConstraints = ((DatabaseTable)row.getTable()).getTableDefinition().getPrimaryUniqueConstraint();
+				if (primaryUniqueConstraints.isEmpty()) {
 					// TODO show some kind of error message, that no PK is defined?
-					System.err.println("Cannot open dependend[ent|ing] rows because no primary key was found");
+					System.err.println("Cannot open dependend[ent|ing] rows because no unique key was found");
 					return;
 				}
+				UniqueConstraint uniqueConstraint = primaryUniqueConstraints.get();
 				
-				String tabTitle = row.getTableName() + "#" + primaryKey.get().getColumnDefinitions() + "="
-						+ row.getColumnValues(primaryKey.get().getColumnDefinitions());
+				String tabTitle = row.getTableName() + "#" + uniqueConstraint.getColumnDefinitions() + "="
+						+ row.getColumnValues(uniqueConstraint.getColumnDefinitions());
 				DependentRowsTab dependentRowsTab = new DependentRowsTab(tabPane, tabTitle);
 				addDependentRowsTableViews(dependentRowsTab, (DatabaseTableRow)row);
 				int tabIndex = tabPane.getTabCount() - 1;

@@ -44,6 +44,8 @@ public class Schema {
 					primaryKey.addReferencingForeignKey(fk);
 				}
 			}
+			System.out.println("Reading schema:     add UK " + tableName + "." + primaryKey.getColumnDefinitions());
+			tableDefinition.addUniqueConstraint(primaryKey);
 			uniqueConstraintsByName.put(primaryKey.getName(), primaryKey);
 		}
 		return primaryKeysByName.get(primaryKeyName);

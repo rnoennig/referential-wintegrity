@@ -1,5 +1,11 @@
 package dao;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -16,7 +22,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,10 +33,11 @@ import domain.TableCell;
 import domain.TableRow;
 import domain.ri.ColumnDefinition;
 import domain.ri.ForeignKey;
-import domain.ri.PrimaryKey;
 import domain.ri.Schema;
 import domain.ri.TableDefinition;
 import domain.ri.UniqueConstraint;
+import service.IniFile;
+import service.IniFileSection;
 
 public class JdbcService {
 
@@ -154,27 +160,27 @@ public class JdbcService {
 		visitedRows.add(startRow);
 		
 		TableDefinition tableDefinition = schema.getTableDefinitionByName(startRow.getTableName()).get();
-		Optional<PrimaryKey> primaryKey = tableDefinition.getPrimaryKey();
-		if (primaryKey.isEmpty()) {
-			System.err.println("No PK found in " + startRow + " stop following primary keys up to generate schema.");
+		if (tableDefinition.getUniqueConstraints().isEmpty()) {
+			System.err.println("No unique constraints found in " + startRow + "! Will stop following unique keys upwards to generate schema graph.");
 			return;
 		}
-		List<ForeignKey> referencingForeignKeys = primaryKey.get().getReferencingForeignKeys();
-		for (ForeignKey referencingForeignKey : referencingForeignKeys) {
-			String fkTableName = referencingForeignKey.getTableName();
-			
-			List<String> whereColumnNames = referencingForeignKey.getColumnDefinitions().stream().map(cd -> cd.getColumnName()).collect(Collectors.toList());
-			List<Object> whereColumnValues = startRow.getColumnValues(referencingForeignKey.getReferencedConstraint().getColumnDefinitions());
-			
-			DatabaseTable table = selectRows(fkTableName, whereColumnNames, whereColumnValues, conn);
-			for (DatabaseTableRow row : table.getTableRows()) {
-				rows.add(row);
-			}
-			for (DatabaseTableRow dependantRow : table.getTableRows()) {
-				getDependentRowsRecursiveFollowingPrimaryKeys(dependantRow, visitedRows, rows, conn);
+		for (UniqueConstraint uniqueConstraint : tableDefinition.getUniqueConstraints()) {
+			List<ForeignKey> referencingForeignKeys = uniqueConstraint.getReferencingForeignKeys();
+			for (ForeignKey referencingForeignKey : referencingForeignKeys) {
+				String fkTableName = referencingForeignKey.getTableName();
+				
+				List<String> whereColumnNames = referencingForeignKey.getColumnDefinitions().stream().map(cd -> cd.getColumnName()).collect(Collectors.toList());
+				List<Object> whereColumnValues = startRow.getColumnValues(referencingForeignKey.getReferencedConstraint().getColumnDefinitions());
+				
+				DatabaseTable table = selectRows(fkTableName, whereColumnNames, whereColumnValues, conn);
+				for (DatabaseTableRow row : table.getTableRows()) {
+					rows.add(row);
+				}
+				for (DatabaseTableRow dependantRow : table.getTableRows()) {
+					getDependentRowsRecursiveFollowingPrimaryKeys(dependantRow, visitedRows, rows, conn);
+				}
 			}
 		}
-
 	}
 	
 	public void getDependentRowsRecursiveFollowingForeignKeys(DatabaseTableRow startRow, Set<DatabaseTableRow> visitedRows, Set<DatabaseTableRow> rows,
@@ -284,10 +290,136 @@ public class JdbcService {
 		return conn;
 	}
 	
-	// TODO create intermedia textual representation of the schema, e.g. list of primary key, foreign keys and columns
 	public Schema readSchemaGraph() {
-		System.out.println("Reading schema");
+		String fileName = "null.schema";
+		if (!new File(fileName).exists()) {
+			IniFile iniFile = readSchemaGraphFromDb();
+			writeIniFile(iniFile);
+		}
+		// TODO provide schema file name as program argument
+		IniFile iniFileReadFromFS = readIniFile(fileName);
+		Schema schema = readSchemaFromFile(iniFileReadFromFS);
+		return schema;
+	}
+	private IniFile readIniFile(String fileName) {
+		IniFile iniFile = new IniFile();
+		try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+			iniFile.read(br);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return iniFile;
+	}
+
+	private Schema readSchemaFromFile(IniFile iniFile) {
+		System.out.println("Reading schema from file");
 		schema = new Schema();
+		List<String> tableNames = iniFile.getSection(IniFileSection.INI_FILE_SECTION_COLUMNS).get().getColumn("TABLE_NAME").stream().distinct().collect(Collectors.toList());
+		System.out.println("Fetching metadata");
+		System.out.println("Selecting all tables");
+
+		for (String tableName : tableNames) {
+			System.out.println("Reading schema: processing table " + tableName);
+			IniFileSection primaryKeysSection = iniFile.getSection(IniFileSection.INI_FILE_SECTION_PRIMARY_KEYS).get();
+			Map<String, List<ColumnDefinition>> primaryKeys = new HashMap<>();
+			
+			for (List<String> record : primaryKeysSection.getRecordsWithCondition(r -> r.get(primaryKeysSection.getIndex("TABLE_NAME")).equals(tableName))) {
+				String primaryKeyName = record.get(primaryKeysSection.getIndex("PK_NAME"));
+				String primaryKeyColumnName = record.get(primaryKeysSection.getIndex("COLUMN_NAME"));
+
+				if (!primaryKeys.containsKey(primaryKeyName)) {
+					primaryKeys.put(primaryKeyName, new ArrayList<>());
+				}
+				List<ColumnDefinition> primaryKeyColumnDefinitions = primaryKeys.get(primaryKeyName);
+				primaryKeyColumnDefinitions.add(new ColumnDefinition(schema.addTable(tableName), primaryKeyColumnName));
+			}
+			for (Entry<String, List<ColumnDefinition>> primaryKeyEntry : primaryKeys.entrySet()) {
+				String pkName = primaryKeyEntry.getKey();
+				List<ColumnDefinition> primaryKeyColumnDefinitions = primaryKeyEntry.getValue();
+				schema.addPrimaryKey(tableName, pkName, primaryKeyColumnDefinitions);
+			}
+
+			// imported keys mean imported primary keys from other tables
+			IniFileSection foreignKeysSection = iniFile.getSection(IniFileSection.INI_FILE_SECTION_FOREIGN_KEYS).get();
+			Map<String, List<ColumnDefinition>> fkFkColumns = new HashMap<>();
+			Map<String, List<ColumnDefinition>> fkPkColumns = new HashMap<>();
+			Map<String, String> fkPkTableNames = new HashMap<>();
+			Map<String, String> fkPkNames = new HashMap<>();
+			for (List<String> record : foreignKeysSection.getRecordsWithCondition(r -> r.get(foreignKeysSection.getIndex("FKTABLE_NAME")).equals(tableName))) {
+				String pkTableName = record.get(foreignKeysSection.getIndex("PKTABLE_NAME"));
+				String pkColumnName = record.get(foreignKeysSection.getIndex("PKCOLUMN_NAME"));
+				String fkColumnName = record.get(foreignKeysSection.getIndex("FKCOLUMN_NAME"));
+				String pkName = record.get(foreignKeysSection.getIndex("PK_NAME"));
+				String fkName = record.get(foreignKeysSection.getIndex("FK_NAME"));
+
+				fkPkTableNames.putIfAbsent(fkName, pkTableName);
+				fkPkNames.putIfAbsent(fkName, pkName);
+
+				if (!fkFkColumns.containsKey(fkName)) {
+					fkFkColumns.put(fkName, new ArrayList<>());
+				}
+				List<ColumnDefinition> foreignKeyColumnDefinitions = fkFkColumns.get(fkName);
+				foreignKeyColumnDefinitions.add(new ColumnDefinition(schema.addTable(tableName), fkColumnName));
+
+				if (!fkPkColumns.containsKey(fkName)) {
+					fkPkColumns.put(fkName, new ArrayList<>());
+				}
+				List<ColumnDefinition> foreignKeyPkColumnDefinitions = fkPkColumns.get(fkName);
+				foreignKeyPkColumnDefinitions.add(new ColumnDefinition(schema.addTable(pkTableName), pkColumnName));
+			}
+
+			for (String fkName : fkPkNames.keySet()) {
+				String pkTableName = fkPkTableNames.get(fkName);
+				String pkName = fkPkNames.get(fkName);
+				// referenced columns aren't always primary keys, but can also be unique constraints
+				// need to differentiate between referenced keys and primary keys!
+				// primary key is a special kind of referencable key!
+				UniqueConstraint uniqueConstraint = schema.addUniqueConstraint(pkTableName, pkName, fkPkColumns.get(fkName));
+				ForeignKey foreignKey = schema.addForeignKey(tableName, fkName, fkFkColumns.get(fkName),
+						uniqueConstraint);
+				uniqueConstraint.addReferencingForeignKey(foreignKey);
+			}
+			
+			IniFileSection columnsSection = iniFile.getSection(IniFileSection.INI_FILE_SECTION_COLUMNS).get();
+			List<ColumnDefinition> columnDefinitions = new ArrayList<>();
+			for (List<String> record : columnsSection.getRecordsWithCondition(r -> r.get(columnsSection.getIndex("TABLE_NAME")).equals(tableName))) {
+				String columnName = record.get(columnsSection.getIndex("COLUMN_NAME"));
+				System.out.println("Reading schema:     add column " + columnName);
+				columnDefinitions.add(new ColumnDefinition(schema.addTable(tableName), columnName));
+			}
+			schema.getTableDefinitionByName(tableName).get().setColumnDefinitions(columnDefinitions);
+		}
+		System.out.println("Finished reading schema from file");
+		return schema;
+	}
+
+	private void writeIniFile(IniFile iniFile) {
+		try (BufferedWriter bw = new BufferedWriter(new FileWriter(this.schemaName + ".schema"))) {
+			iniFile.write(bw);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 *  create intermedia textual representation of the schema, e.g. list of primary key, foreign keys and columns
+	 */
+	public IniFile readSchemaGraphFromDb() {
+		System.out.println("Reading database metadata");
+		IniFile iniFile = new IniFile();
+		IniFileSection primaryKeysSection = new IniFileSection(IniFileSection.INI_FILE_SECTION_PRIMARY_KEYS);
+		primaryKeysSection.setHeader("TABLE_NAME", "PK_NAME", "COLUMN_NAME");
+		iniFile.addSection(primaryKeysSection);
+		
+		IniFileSection foreignKeysSection = new IniFileSection(IniFileSection.INI_FILE_SECTION_FOREIGN_KEYS);
+		foreignKeysSection.setHeader("PKTABLE_NAME", "PKCOLUMN_NAME", "FKTABLE_NAME", "FKCOLUMN_NAME", "PK_NAME", "FK_NAME");
+		iniFile.addSection(foreignKeysSection);
+		
+		IniFileSection columnsSection = new IniFileSection(IniFileSection.INI_FILE_SECTION_COLUMNS);
+		columnsSection.setHeader("TABLE_NAME", "COLUMN_NAME");
+		iniFile.addSection(columnsSection);
 
 		try {
 			Connection conn = createConnection();
@@ -300,88 +432,39 @@ public class JdbcService {
 				String tableName = tableRow.getColumnValue(0).toString();
 				System.out.println("Reading schema: processing table " + tableName);
 				ResultSet primaryKeysResultSet = databaseMetaData.getPrimaryKeys(null, schemaName, tableName);
-				Map<String, List<ColumnDefinition>> primaryKeys = new HashMap<>();
 				while (primaryKeysResultSet.next()) {
 					String primaryKeyName = primaryKeysResultSet.getString("PK_NAME");
 					String primaryKeyColumnName = primaryKeysResultSet.getString("COLUMN_NAME");
-
-					if (!primaryKeys.containsKey(primaryKeyName)) {
-						primaryKeys.put(primaryKeyName, new ArrayList<>());
-					}
-					List<ColumnDefinition> primaryKeyColumnDefinitions = primaryKeys.get(primaryKeyName);
-					primaryKeyColumnDefinitions.add(new ColumnDefinition(schema.addTable(tableName), primaryKeyColumnName));
+					primaryKeysSection.addRecord(tableName, primaryKeyName, primaryKeyColumnName);
 				}
 				primaryKeysResultSet.close();
 
-				for (Entry<String, List<ColumnDefinition>> primaryKeyEntry : primaryKeys.entrySet()) {
-					String pkName = primaryKeyEntry.getKey();
-					List<ColumnDefinition> primaryKeyColumnDefinitions = primaryKeyEntry.getValue();
-					schema.addPrimaryKey(tableName, pkName, primaryKeyColumnDefinitions);
-				}
-
 				// imported keys mean imported primary keys from other tables
 				ResultSet importedKeysResultSet = databaseMetaData.getImportedKeys(null, schemaName, tableName);
-				Map<String, List<ColumnDefinition>> fkFkColumns = new HashMap<>();
-				Map<String, List<ColumnDefinition>> fkPkColumns = new HashMap<>();
-				Map<String, String> fkPkTableNames = new HashMap<>();
-				Map<String, String> fkPkNames = new HashMap<>();
 				while (importedKeysResultSet.next()) {
 					String pkTableName = importedKeysResultSet.getString("PKTABLE_NAME");
 					String pkColumnName = importedKeysResultSet.getString("PKCOLUMN_NAME");
 					String fkColumnName = importedKeysResultSet.getString("FKCOLUMN_NAME");
 					String pkName = importedKeysResultSet.getString("PK_NAME");
 					String fkName = importedKeysResultSet.getString("FK_NAME");
-
-					fkPkTableNames.putIfAbsent(fkName, pkTableName);
-					fkPkNames.putIfAbsent(fkName, pkName);
-
-					if (!fkFkColumns.containsKey(fkName)) {
-						fkFkColumns.put(fkName, new ArrayList<>());
-					}
-					List<ColumnDefinition> foreignKeyColumnDefinitions = fkFkColumns.get(fkName);
-					foreignKeyColumnDefinitions.add(new ColumnDefinition(schema.addTable(tableName), fkColumnName));
-
-					if (!fkPkColumns.containsKey(fkName)) {
-						fkPkColumns.put(fkName, new ArrayList<>());
-					}
-					List<ColumnDefinition> foreignKeyPkColumnDefinitions = fkPkColumns.get(fkName);
-					foreignKeyPkColumnDefinitions.add(new ColumnDefinition(schema.addTable(pkTableName), pkColumnName));
+					foreignKeysSection.addRecord(pkTableName, pkColumnName, tableName, fkColumnName, pkName, fkName);
 				}
 				importedKeysResultSet.close();
-
-				for (String fkName : fkPkNames.keySet()) {
-					String pkTableName = fkPkTableNames.get(fkName);
-					String pkName = fkPkNames.get(fkName);
-					// referenced columns aren't always primary keys, but can also be unique constraints
-					// need to differentiate between referenced keys and primary keys!
-					// primary key is a special kind of referencable key!
-					UniqueConstraint uniqueConstraint = schema.addUniqueConstraint(pkTableName, pkName, fkPkColumns.get(fkName));
-					ForeignKey foreignKey = schema.addForeignKey(tableName, fkName, fkFkColumns.get(fkName),
-							uniqueConstraint);
-					uniqueConstraint.addReferencingForeignKey(foreignKey);
-				}
 				
 				ResultSet columns = databaseMetaData.getColumns(null, schemaName, tableName, null);
-				List<ColumnDefinition> columnDefinitions = new ArrayList<>();
 				while (columns.next()) {
 					String columnName = columns.getString("COLUMN_NAME");
-					System.out.println("Reading schema:     add column " + columnName);
-//					String columnSize = columns.getString("COLUMN_SIZE");
-//					String datatype = columns.getString("DATA_TYPE");
-//					String isNullable = columns.getString("IS_NULLABLE");
-//					String isAutoIncrement = columns.getString("IS_AUTOINCREMENT");
-					columnDefinitions.add(new ColumnDefinition(schema.addTable(tableName), columnName));
+					columnsSection.addRecord(tableName, columnName);
 				}
 				columns.close();
-				schema.getTableDefinitionByName(tableName).get().setColumnDefinitions(columnDefinitions);
 			}
 			conn.close();
 		} catch (ClassNotFoundException | SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("Finished reading schema");
-		return schema;
+		System.out.println("Finished reading database metadata");
+		return iniFile;
 	}
 
 	public List<String> toInsertStatements(DatabaseTable table) {

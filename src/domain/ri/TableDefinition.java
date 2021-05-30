@@ -97,4 +97,18 @@ public class TableDefinition {
 	public boolean hasPrimaryKey() {
 		return primaryKey != null;
 	}
+
+	public List<UniqueConstraint> getUniqueConstraints() {
+		return uniqueConstraints;
+	}
+
+	public Optional<UniqueConstraint> getPrimaryUniqueConstraint() {
+		if (this.hasPrimaryKey()) {
+			return Optional.of(primaryKey);
+		}
+		if (!this.uniqueConstraints.isEmpty()) {
+			return Optional.of(this.uniqueConstraints.get(0));
+		}
+		return Optional.ofNullable(null);
+	}
 }

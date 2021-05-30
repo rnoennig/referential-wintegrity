@@ -54,9 +54,9 @@ public class DatabaseTableView extends TableView {
 		// sets the text of the cell
 		super.renderCell(tableCellRenderer, result, cell);
 		
+		result.setForeground(Color.BLACK);
 		if (((DatabaseTableCell)cell).isPrimaryKey()) {
 			result.setFont(result.getFont().deriveFont(Font.BOLD, result.getFont().getSize()));
-			result.setForeground(Color.BLACK);
 		}
 		if (((DatabaseTableCell)cell).isForeignKey()) {
 			result.setForeground(Color.RED);
