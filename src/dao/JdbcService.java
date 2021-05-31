@@ -38,11 +38,26 @@ import domain.ri.TableDefinition;
 import domain.ri.UniqueConstraint;
 import service.IniFile;
 import service.IniFileSection;
+import service.JvmArgumentConfig;
 
 public class JdbcService {
 
 	private Schema schema;
 	private String schemaName = null;
+	private String databaseSchemaFilePath;
+	private String jdbcDriverClassName;
+	private String jdbcConnectionUrl;
+	private String jdbcConnectionUser;
+	private String jdbcConnectionPassword;
+	
+	public JdbcService(JvmArgumentConfig config) {
+		this.schemaName = config.getDatabaseSchemaName();
+		this.databaseSchemaFilePath = config.getDatabaseSchemaFilePath();
+		this.jdbcDriverClassName = config.getJdbcDriverClassName();
+		this.jdbcConnectionUrl = config.getJdbcConnectionUrl();
+		this.jdbcConnectionUser = config.getJdbcConnectionUser();
+		this.jdbcConnectionPassword = config.getJdbcConnectionPassword();
+	}
 
 	/**
 	 * 
@@ -281,23 +296,18 @@ public class JdbcService {
 	}
 
 	private Connection createConnection() throws ClassNotFoundException, SQLException {
-//		Class.forName("oracle.jdbc.driver.OracleDriver");
-//		String url = "jdbc:oracle:thin:@localhost:51521:ORCLCDB";
-//		Connection conn = DriverManager.getConnection(url, "secpki", "secpassw");
-		Class.forName("org.postgresql.Driver");
-		String url = "jdbc:postgresql://localhost/?user=postgres&password=mysecretpassword&ssl=false";
-		Connection conn = DriverManager.getConnection(url);
+		Class.forName(jdbcDriverClassName);
+		Connection conn = DriverManager.getConnection(jdbcConnectionUrl, jdbcConnectionUser, jdbcConnectionPassword);
 		return conn;
 	}
 	
 	public Schema readSchemaGraph() {
-		String fileName = "null.schema";
-		if (!new File(fileName).exists()) {
+		if (!new File(databaseSchemaFilePath).exists()) {
 			IniFile iniFile = readSchemaGraphFromDb();
 			writeIniFile(iniFile);
 		}
 		// TODO provide schema file name as program argument
-		IniFile iniFileReadFromFS = readIniFile(fileName);
+		IniFile iniFileReadFromFS = readIniFile(databaseSchemaFilePath);
 		Schema schema = readSchemaFromFile(iniFileReadFromFS);
 		return schema;
 	}

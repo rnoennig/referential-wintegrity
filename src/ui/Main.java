@@ -21,13 +21,14 @@ import domain.TableCell;
 import domain.TableRow;
 import domain.ri.Schema;
 import domain.ri.UniqueConstraint;
+import service.JvmArgumentConfig;
 
 public class Main {
 	
 	private static final Main main = new Main();
 
 	public static void main(String[] args) {
-		main.setJdbcProvider(new JdbcService());
+		main.setJdbcProvider(new JdbcService(new JvmArgumentConfig()));
 		main.run();
 	}
 
