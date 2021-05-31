@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import domain.ri.ColumnDefinition;
+import domain.ri.ForeignKey;
 import domain.ri.TableDefinition;
 import domain.ri.UniqueConstraint;
 
@@ -35,6 +36,17 @@ public class DatabaseTableRow extends TableRow {
 			return "["+tableName+":"+ukColDefs+"="+getColumnValues(ukColDefs)+"]";
 		}
 		
-		return "["+tableName+": row #"+table.getTableRows().indexOf(this)+"]";
+		List<ForeignKey> foreignKeys = tableDefinition.getForeignKeys();
+		if (!foreignKeys.isEmpty()) {
+			// TODO get the first not-null foreign key
+			List<ColumnDefinition> columnDefinitions = foreignKeys.get(0).getColumnDefinitions();
+			return "["+tableName+":"+columnDefinitions+"="+getColumnValues(columnDefinitions)+"]";
+		}
+		
+		if (table == null || !table.getTableRows().isEmpty()) {
+			return "["+tableName+": row #"+table.getTableRows().indexOf(this)+"]";
+		}
+		
+		return "["+tableName+": row "+this.getValues()+"]";
 	}
 }

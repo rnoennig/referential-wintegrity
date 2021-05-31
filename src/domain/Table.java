@@ -9,16 +9,16 @@ import ui.TextWidthCalculator;
  * @author wiesel
  *
  */
-public class Table {
-	List<? extends TableRow> data;
+public class Table<T extends TableRow> {
+	List<T> data;
 	List<TableCell> header;
 	List<String> columnNames;
 	protected String tableName;
-	public List<? extends TableRow> getTableRows() {
+	public List<T> getTableRows() {
 		return data;
 	}
 
-	public void setData(List<? extends TableRow> data) {
+	public void setData(List<T> data) {
 		this.data = data;
 	}
 

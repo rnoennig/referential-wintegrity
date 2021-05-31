@@ -81,8 +81,8 @@ public class JdbcService {
 	 * 
 	 * @return all tables in the connected database
 	 */
-	public Table selectAllTableNames() {
-		Table table = null;
+	public Table<TableRow> selectAllTableNames() {
+		Table<TableRow> table = null;
 		try {
 			Connection conn = createConnection();
 			DatabaseMetaData databaseMetaData = conn.getMetaData();
@@ -95,7 +95,7 @@ public class JdbcService {
 			res.close();
 			conn.close();
 
-			table = new Table();
+			table = new Table<>();
 			table.setTableName("All tables");
 			table.setColumnNames(Arrays.asList("TABLE_NAME"));
 			table.setHeader(Arrays.asList(new TableCell("TABLE_NAME", true)));
@@ -120,7 +120,7 @@ public class JdbcService {
 		try {
 			Connection conn = createConnection();
 			Set<DatabaseTableRow> visitedRowsFollowingPrimaryKeys = new HashSet<>();
-			getDependentRowsRecursiveFollowingUniqueKeys(databaseTableRow, visitedRowsFollowingPrimaryKeys, dependantRows, conn);
+			getDependentRowsRecursiveFollowingPrimaryKeys(databaseTableRow, visitedRowsFollowingPrimaryKeys, dependantRows, conn);
 			Set<DatabaseTableRow> visitedRowsFollowingForeignKeys = new HashSet<>();
 			getDependentRowsRecursiveFollowingForeignKeys(databaseTableRow, visitedRowsFollowingForeignKeys, dependantRows, conn);
 			conn.close();
@@ -166,7 +166,7 @@ public class JdbcService {
 		return tables;
 	}
 
-	public void getDependentRowsRecursiveFollowingUniqueKeys(DatabaseTableRow startRow, Set<DatabaseTableRow> visitedRows, Set<DatabaseTableRow> rows,
+	public void getDependentRowsRecursiveFollowingPrimaryKeys(DatabaseTableRow startRow, Set<DatabaseTableRow> visitedRows, Set<DatabaseTableRow> rows,
 			Connection conn) throws SQLException {
 		if (visitedRows.contains(startRow)) {
 			System.err.println("Already visited this row: " + startRow);
@@ -192,7 +192,7 @@ public class JdbcService {
 					rows.add(row);
 				}
 				for (DatabaseTableRow dependantRow : table.getTableRows()) {
-					getDependentRowsRecursiveFollowingUniqueKeys(dependantRow, visitedRows, rows, conn);
+					getDependentRowsRecursiveFollowingPrimaryKeys(dependantRow, visitedRows, rows, conn);
 				}
 			}
 		}
@@ -297,6 +297,7 @@ public class JdbcService {
 
 	private Connection createConnection() throws ClassNotFoundException, SQLException {
 		Class.forName(jdbcDriverClassName);
+		System.out.println("Connection to database " + schemaName + " at url " + jdbcConnectionUrl + " with user " + jdbcConnectionUser);
 		Connection conn = DriverManager.getConnection(jdbcConnectionUrl, jdbcConnectionUser, jdbcConnectionPassword);
 		return conn;
 	}
@@ -437,7 +438,7 @@ public class JdbcService {
 			DatabaseMetaData databaseMetaData = conn.getMetaData();
 			System.out.println("Selecting all tables");
 
-			Table tables = selectAllTableNames();
+			Table<TableRow> tables = selectAllTableNames();
 			for (TableRow tableRow : tables.getTableRows()) {
 				String tableName = tableRow.getColumnValue(0).toString();
 				System.out.println("Reading schema: processing table " + tableName);

@@ -25,6 +25,7 @@ import javax.swing.table.TableModel;
 
 import domain.Table;
 import domain.TableCell;
+import domain.TableRow;
 
 public class TableView extends JPanel {
 	private static final long serialVersionUID = 1L;
@@ -39,7 +40,7 @@ public class TableView extends JPanel {
 
 	private boolean autoHeight;
 
-	public TableView(Table table, boolean autoWidth) {
+	public TableView(Table<? extends TableRow> table, boolean autoWidth) {
 		super();
 		this.table = table;
 		this.autoWidth = autoWidth;

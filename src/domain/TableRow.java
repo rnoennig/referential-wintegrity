@@ -10,7 +10,7 @@ import domain.ri.ColumnDefinition;
  *
  */
 public class TableRow {
-	protected Table table;
+	protected Table<? extends TableRow> table;
 	
 	private List<? extends TableCell> values;
 	public TableRow(Table table, List<? extends TableCell> values) {

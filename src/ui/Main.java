@@ -19,6 +19,7 @@ import domain.DependentDatabaseTableRowsQuery;
 import domain.Table;
 import domain.TableCell;
 import domain.TableRow;
+import domain.ri.Constraint;
 import domain.ri.ForeignKey;
 import domain.ri.Schema;
 import domain.ri.TableDefinition;
@@ -171,6 +172,8 @@ public class Main {
 		return new ClickAdapter() {
 			@Override
 			public void cellSelected(TableRow row, TableCell cell) {
+				Constraint constraint;
+				
 				TableDefinition tableDefinition = ((DatabaseTable)row.getTable()).getTableDefinition();
 				Optional<UniqueConstraint> primaryUniqueConstraints = tableDefinition.getPrimaryUniqueConstraint();
 				List<ForeignKey> foreignKeys = tableDefinition.getForeignKeys();
@@ -179,10 +182,14 @@ public class Main {
 					System.err.println("Cannot open dependend[ent|ing] rows because neither unique keys nor foreign keys were found");
 					return;
 				}
-				UniqueConstraint uniqueConstraint = primaryUniqueConstraints.get();
+				if (primaryUniqueConstraints.isPresent()) {
+					constraint = primaryUniqueConstraints.get();
+				} else {
+					constraint = foreignKeys.get(0);
+				}
 				
-				String tabTitle = row.getTableName() + "#" + uniqueConstraint.getColumnDefinitions() + "="
-						+ row.getColumnValues(uniqueConstraint.getColumnDefinitions());
+				String tabTitle = row.getTableName() + "#" + constraint.getColumnDefinitions() + "="
+						+ row.getColumnValues(constraint.getColumnDefinitions());
 				DependentRowsTab dependentRowsTab = new DependentRowsTab(tabPane, tabTitle);
 				addDependentRowsTableViews(dependentRowsTab, (DatabaseTableRow)row);
 				int tabIndex = tabPane.getTabCount() - 1;

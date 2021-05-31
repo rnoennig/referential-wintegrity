@@ -5,7 +5,7 @@ import java.util.List;
 
 import domain.ri.TableDefinition;
 
-public class DatabaseTable extends Table {
+public class DatabaseTable extends Table<DatabaseTableRow> {
 	
 	private TableDefinition tableDefinition;
 
