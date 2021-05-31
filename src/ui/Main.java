@@ -19,7 +19,9 @@ import domain.DependentDatabaseTableRowsQuery;
 import domain.Table;
 import domain.TableCell;
 import domain.TableRow;
+import domain.ri.ForeignKey;
 import domain.ri.Schema;
+import domain.ri.TableDefinition;
 import domain.ri.UniqueConstraint;
 import service.JvmArgumentConfig;
 
@@ -169,10 +171,12 @@ public class Main {
 		return new ClickAdapter() {
 			@Override
 			public void cellSelected(TableRow row, TableCell cell) {
-				Optional<UniqueConstraint> primaryUniqueConstraints = ((DatabaseTable)row.getTable()).getTableDefinition().getPrimaryUniqueConstraint();
-				if (primaryUniqueConstraints.isEmpty()) {
+				TableDefinition tableDefinition = ((DatabaseTable)row.getTable()).getTableDefinition();
+				Optional<UniqueConstraint> primaryUniqueConstraints = tableDefinition.getPrimaryUniqueConstraint();
+				List<ForeignKey> foreignKeys = tableDefinition.getForeignKeys();
+				if (primaryUniqueConstraints.isEmpty() && foreignKeys.isEmpty()) {
 					// TODO show some kind of error message, that no PK is defined?
-					System.err.println("Cannot open dependend[ent|ing] rows because no unique key was found");
+					System.err.println("Cannot open dependend[ent|ing] rows because neither unique keys nor foreign keys were found");
 					return;
 				}
 				UniqueConstraint uniqueConstraint = primaryUniqueConstraints.get();

@@ -120,7 +120,7 @@ public class JdbcService {
 		try {
 			Connection conn = createConnection();
 			Set<DatabaseTableRow> visitedRowsFollowingPrimaryKeys = new HashSet<>();
-			getDependentRowsRecursiveFollowingPrimaryKeys(databaseTableRow, visitedRowsFollowingPrimaryKeys, dependantRows, conn);
+			getDependentRowsRecursiveFollowingUniqueKeys(databaseTableRow, visitedRowsFollowingPrimaryKeys, dependantRows, conn);
 			Set<DatabaseTableRow> visitedRowsFollowingForeignKeys = new HashSet<>();
 			getDependentRowsRecursiveFollowingForeignKeys(databaseTableRow, visitedRowsFollowingForeignKeys, dependantRows, conn);
 			conn.close();
@@ -166,7 +166,7 @@ public class JdbcService {
 		return tables;
 	}
 
-	public void getDependentRowsRecursiveFollowingPrimaryKeys(DatabaseTableRow startRow, Set<DatabaseTableRow> visitedRows, Set<DatabaseTableRow> rows,
+	public void getDependentRowsRecursiveFollowingUniqueKeys(DatabaseTableRow startRow, Set<DatabaseTableRow> visitedRows, Set<DatabaseTableRow> rows,
 			Connection conn) throws SQLException {
 		if (visitedRows.contains(startRow)) {
 			System.err.println("Already visited this row: " + startRow);
@@ -192,7 +192,7 @@ public class JdbcService {
 					rows.add(row);
 				}
 				for (DatabaseTableRow dependantRow : table.getTableRows()) {
-					getDependentRowsRecursiveFollowingPrimaryKeys(dependantRow, visitedRows, rows, conn);
+					getDependentRowsRecursiveFollowingUniqueKeys(dependantRow, visitedRows, rows, conn);
 				}
 			}
 		}
