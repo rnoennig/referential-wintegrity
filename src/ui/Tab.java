@@ -32,6 +32,8 @@ public class Tab {
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		scrollpane = new JScrollPane(panel);
+		scrollpane.getVerticalScrollBar().setUnitIncrement(4);
+
 		this.tabPane.addTab(this.title, scrollpane);
 		this.tabTitlePanel = new JPanel();
 		this.tabTitlePanel.setBackground(new Color(0,0,0,0));
@@ -71,6 +73,10 @@ public class Tab {
 
 	public JTabbedPane getTabPane() {
 		return tabPane;
+	}
+
+	public JScrollPane getScrollPane() {
+		return scrollpane;
 	}
 
 }

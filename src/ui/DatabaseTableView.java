@@ -14,6 +14,7 @@ import javax.swing.table.TableRowSorter;
 
 import domain.DatabaseTable;
 import domain.DatabaseTableCell;
+import domain.DatabaseTableRow;
 import domain.TableCell;
 import domain.ri.TableDefinition;
 
@@ -21,7 +22,7 @@ import domain.ri.TableDefinition;
  * TableView with the content of physical database columns as table columns
  *
  */
-public class DatabaseTableView extends TableView {
+public class DatabaseTableView extends TableView<DatabaseTableRow> {
 	private static final long serialVersionUID = 1L;
 
 	public DatabaseTableView(DatabaseTable table) {

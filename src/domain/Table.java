@@ -62,7 +62,7 @@ public class Table<T extends TableRow> {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Table other = (Table) obj;
+		Table<?> other = (Table<?>) obj;
 		if (tableName == null) {
 			if (other.tableName != null)
 				return false;

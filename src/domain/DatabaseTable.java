@@ -30,10 +30,9 @@ public class DatabaseTable extends Table<DatabaseTableRow> {
 		this.tableDefinition = tableDefinition;
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Override
 	public List<DatabaseTableRow> getTableRows() {
-		return (List<DatabaseTableRow>)super.getTableRows();
+		return super.getTableRows();
 	}
 
 	@Override

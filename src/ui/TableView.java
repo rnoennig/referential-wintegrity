@@ -27,20 +27,22 @@ import domain.Table;
 import domain.TableCell;
 import domain.TableRow;
 
-public class TableView extends JPanel {
+public class TableView<T extends TableRow> extends JPanel {
 	private static final long serialVersionUID = 1L;
 	
 	private List<ClickAdapter> clickAdapters = new LinkedList<>();
 	
 	protected JTable jTable;
 	
-	protected Table table;
+	protected Table<T> table;
 	
 	private boolean autoWidth = false;
 
 	private boolean autoHeight;
 
-	public TableView(Table<? extends TableRow> table, boolean autoWidth) {
+	private JScrollPane scrollPane;
+
+	public TableView(Table<T> table, boolean autoWidth) {
 		super();
 		this.table = table;
 		this.autoWidth = autoWidth;
@@ -115,7 +117,7 @@ public class TableView extends JPanel {
 		Dimension d = new Dimension(cols, rows);
 		jTable.setPreferredScrollableViewportSize(d);
 		
-		JScrollPane scrollPane = new JScrollPane(jTable) {
+		scrollPane = new JScrollPane(jTable) {
 			private static final long serialVersionUID = 1L;
 
 			/**
@@ -216,11 +218,15 @@ public class TableView extends JPanel {
 		return cellValue.toString();
 	}
 
-	public Table getTable() {
+	public Table<T> getTable() {
 		return this.table;
 	}
 
 	public void setAutoHeight(boolean autoHeight) {
 		this.autoHeight = autoHeight;
+	}
+	
+	public JScrollPane getScrollPane() {
+		return scrollPane;
 	}
 }

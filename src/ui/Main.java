@@ -107,16 +107,16 @@ public class Main {
 	 * @return a view with all tables
 	 */
 	protected void createTableSelectionView(JTabbedPane tabPane, JSplitPane eastWestPanel) {
-		SwingWorker<Table, Void> swingWorker = new SwingWorker<Table, Void>() {
+		SwingWorker<Table<TableRow>, Void> swingWorker = new SwingWorker<Table<TableRow>, Void>() {
 			@Override
-			protected Table doInBackground() throws Exception {
+			protected Table<TableRow> doInBackground() throws Exception {
 				return Main.this.jdbcProvider.selectAllTableNames();
 			}
 
 			@Override
 			protected void done() {
 				try {
-					TableView allTablesView = new TableView(get(), true);
+					TableView<TableRow> allTablesView = new TableView<>(get(), true);
 					allTablesView.addClicklistener(new ClickAdapter() {
 						@Override
 						public void cellSelected(TableRow row, TableCell cell) {
@@ -154,7 +154,7 @@ public class Main {
 			@Override
 			protected void done() {
 				try {
-					TableView tableView = new DatabaseTableView(get());
+					DatabaseTableView tableView = new DatabaseTableView(get());
 					tableView.setAutoHeight(true);
 					tableView.addClicklistener(createDependentRowClickListener(tabPane));
 					panel.add(tableView);
@@ -214,6 +214,8 @@ public class Main {
 					DatabaseTableView databaseTableView = new DatabaseTableView(dependentTables);
 					databaseTableView.addClicklistener(createDependentRowClickListener(tab.getTabPane()));
 					databaseTableGroup.add(databaseTableView);
+					// fix scroll issue
+					databaseTableView.getScrollPane().addMouseWheelListener(new MouseWheelScrollListener(databaseTableView.getScrollPane()));
 				}
 			}
 		};

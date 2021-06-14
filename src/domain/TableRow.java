@@ -13,7 +13,7 @@ public class TableRow {
 	protected Table<? extends TableRow> table;
 	
 	private List<? extends TableCell> values;
-	public TableRow(Table table, List<? extends TableCell> values) {
+	public TableRow(Table<? extends TableRow> table, List<? extends TableCell> values) {
 		this.table = table;
 		this.values = values;
 	}
@@ -21,11 +21,11 @@ public class TableRow {
 	public String getTableName() {
 		return table.getTableName();
 	}
-	public Table getTable() {
+	public Table<? extends TableRow> getTable() {
 		return table;
 	}
 
-	public void setTable(Table table) {
+	public void setTable(Table<? extends TableRow> table) {
 		this.table = table;
 	}
 
