@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingWorker;
@@ -120,44 +119,34 @@ public class Main {
 						@Override
 						public void cellSelected(TableRow row, TableCell cell) {
 							String tableName = cell.getValue().toString();
-							Tab tab = new Tab(tabPane, tableName);
-							createRowSelectionView(tabPane, tableName, tab.getContentComponent());
+							QueryResultTab<DatabaseTable> tab = new QueryResultTab<>(tabPane, tableName);
+							
+							DatabaseTableQuery<DatabaseTable> query = new DatabaseTableQuery<>() {
+								
+								@Override
+								protected DatabaseTable doInBackground() throws Exception {
+									return Main.this.jdbcProvider.getTableRows(tableName);
+								}
+								
+								@Override
+								protected void done(DatabaseTable result) {
+									tab.getContentComponent().removeAll();
+									DatabaseTableView tableView = new DatabaseTableView(result);
+									tableView.setAutoHeight(true);
+									tableView.addClicklistener(createDependentRowClickListener(tabPane));
+									tab.getContentComponent().add(tableView);
+									tab.getContentComponent().revalidate();
+								}
+							};
+							query.execute();
+							
+							tab.setQuery(query);
+							
 							tabPane.setSelectedIndex(tabPane.getTabCount()-1);
 						}
 					});
 					eastWestPanel.setLeftComponent(allTablesView);
 					eastWestPanel.setDividerLocation(150);
-				} catch (InterruptedException | ExecutionException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		};
-		swingWorker.execute();
-	}
-
-	/**
-	 * 
-	 * @param tabPane
-	 * @param tableName
-	 * @param panel
-	 * @return a view with all rows of the given table
-	 */
-	protected void createRowSelectionView(JTabbedPane tabPane, String tableName, JPanel panel) {
-		SwingWorker<DatabaseTable, Void> swingWorker = new SwingWorker<DatabaseTable, Void>() {
-			@Override
-			protected DatabaseTable doInBackground() throws Exception {
-				return Main.this.jdbcProvider.getTableRows(tableName);
-			}
-
-			@Override
-			protected void done() {
-				try {
-					DatabaseTableView tableView = new DatabaseTableView(get());
-					tableView.setAutoHeight(true);
-					tableView.addClicklistener(createDependentRowClickListener(tabPane));
-					panel.add(tableView);
-					panel.revalidate();
 				} catch (InterruptedException | ExecutionException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

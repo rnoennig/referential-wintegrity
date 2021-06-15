@@ -8,7 +8,7 @@ import javax.swing.SwingWorker;
 import domain.DatabaseTable;
 import domain.DatabaseTableRow;
 
-public abstract class DependentDatabaseTableRowsQuery {
+public abstract class DependentDatabaseTableRowsQuery extends DatabaseTableQuery<List<DatabaseTable>> {
 
 	private DatabaseTableRow[] rows;
 	
