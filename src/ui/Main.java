@@ -15,7 +15,6 @@ import dao.JdbcService;
 import domain.DatabaseTable;
 import domain.DatabaseTableRow;
 import domain.DatabaseTableViewGroup;
-import domain.DependentDatabaseTableRowsQuery;
 import domain.Table;
 import domain.TableCell;
 import domain.TableRow;

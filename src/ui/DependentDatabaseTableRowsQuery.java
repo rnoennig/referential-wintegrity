@@ -1,11 +1,12 @@
-package domain;
+package ui;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.SwingWorker;
 
-import ui.Main;
+import domain.DatabaseTable;
+import domain.DatabaseTableRow;
 
 public abstract class DependentDatabaseTableRowsQuery {
 

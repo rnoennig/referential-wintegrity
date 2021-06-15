@@ -7,7 +7,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import ui.ClipboardUtil;
 import ui.DatabaseTableView;
+import ui.DependentDatabaseTableRowsQuery;
 import ui.DependentRowsTab;
 import ui.Main;
 import ui.Tab;
@@ -56,7 +58,12 @@ public class DatabaseTableViewGroup implements ActionListener {
 				.map(dbtv -> dbtv.getTable())
 				.collect(Collectors.toList());
 		System.out.println("Export this group as insert statements:");
-		List<String> statements = tables.stream().flatMap(t -> Main.getInstance().getJdbcProvider().toInsertStatements(t).stream()).collect(Collectors.toList());
+		List<String> statements = tables.stream()
+				.distinct()
+				.flatMap(t -> Main.getInstance().getJdbcProvider().toInsertStatements(t).stream())
+				.collect(Collectors.toList());
+		String statementsAsText = statements.stream().collect(Collectors.joining("\n"));
+		ClipboardUtil.copyText(statementsAsText);
 		for (String stmt : statements) {
 			System.out.println(stmt);
 		}
@@ -66,9 +73,15 @@ public class DatabaseTableViewGroup implements ActionListener {
 		List<DatabaseTable> tables = databaseTableViews.stream()
 				.map(dbtv -> dbtv.getTable())
 				.collect(Collectors.toList());
+		// delete in reverse hierarchical order to preserve referential integrity
 		Collections.reverse(tables);
 		System.out.println("Export this group as delete statements:");
-		List<String> statements = tables.stream().flatMap(t -> Main.getInstance().getJdbcProvider().toDeleteStatements(t).stream()).collect(Collectors.toList());
+		List<String> statements = tables.stream()
+				.distinct()
+				.flatMap(t -> Main.getInstance().getJdbcProvider().toDeleteStatements(t).stream())
+				.collect(Collectors.toList());
+		String statementsAsText = statements.stream().collect(Collectors.joining("\n"));
+		ClipboardUtil.copyText(statementsAsText);
 		for (String stmt : statements) {
 			System.out.println(stmt);
 		}
