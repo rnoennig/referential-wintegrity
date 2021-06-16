@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JMenuItem;
-import javax.swing.JPopupMenu;
 import javax.swing.JTabbedPane;
 
 import domain.DatabaseTableViewGroup;
@@ -19,20 +18,16 @@ public class QueryResultTab<T> extends Tab {
 
 	public static final String COMMAND_REFRESH = "refresh";
 
-	protected JPopupMenu menu;
 	private JMenuItem refreshMenuItem;
 	
 	protected DatabaseTableQuery<T> query;
 
 	public QueryResultTab(JTabbedPane tabPane, String title) {
 		super(tabPane, title);
-		menu = new JPopupMenu();
 		
 		refreshMenuItem = new JMenuItem("Refresh");
 		refreshMenuItem.setActionCommand(COMMAND_REFRESH);
 		menu.add(refreshMenuItem);
-		
-		this.tabTitlePanel.setComponentPopupMenu(menu);
 	}
 
 	public void setQuery(DatabaseTableQuery<T> query) {
@@ -54,4 +49,6 @@ public class QueryResultTab<T> extends Tab {
 		super.addActionListener(listener);
 		refreshMenuItem.addActionListener(listener);
 	}
+	
+	
 }

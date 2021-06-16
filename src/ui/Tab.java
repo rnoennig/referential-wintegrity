@@ -1,6 +1,7 @@
 package ui;
 
 import java.awt.Color;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -8,7 +9,9 @@ import java.awt.event.MouseEvent;
 import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 
@@ -23,7 +26,12 @@ public class Tab {
 	protected JTabbedPane tabPane;
 	protected JPanel tabTitlePanel;
 	protected JPanel panel;
-	private JScrollPane scrollpane;
+	private JScrollPane scrollPane;
+	
+	protected JPopupMenu menu;
+	private JMenuItem closeMenuItem;
+	
+	public static final String COMMAND_CLOSE = "close";
 	
 	public Tab(JTabbedPane tabPane, String title) {
 		this.tabPane = tabPane;
@@ -31,10 +39,10 @@ public class Tab {
 		
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-		scrollpane = new JScrollPane(panel);
-		scrollpane.getVerticalScrollBar().setUnitIncrement(4);
+		scrollPane = new JScrollPane(panel);
+		scrollPane.getVerticalScrollBar().setUnitIncrement(4);
 
-		this.tabPane.addTab(this.title, scrollpane);
+		this.tabPane.addTab(this.title, scrollPane);
 		this.tabTitlePanel = new JPanel();
 		this.tabTitlePanel.setBackground(new Color(0,0,0,0));
 		JLabel tabLabel = new JLabel(this.title);
@@ -47,10 +55,33 @@ public class Tab {
 				tabPane.setSelectedIndex(tabPane.indexOfTab(title));
 			}
 		});
+
+		menu = new JPopupMenu();
+		
+		closeMenuItem = new JMenuItem("Close");
+		closeMenuItem.setActionCommand(COMMAND_CLOSE);
+		closeMenuItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				onClose();
+			}
+		}); 
+		menu.add(closeMenuItem);
+		
+		this.tabTitlePanel.setComponentPopupMenu(menu);
 	}
 	
+	protected void onClose() {
+		int indexOfTabComponent = this.tabPane.indexOfTabComponent(this.tabTitlePanel);
+		this.tabPane.removeTabAt(indexOfTabComponent);
+	}
+
+	/**
+	 * subclasses may implement more actions
+	 * @param listener
+	 */
 	public void addActionListener(ActionListener listener) {
-		// subclasses may implement more actions
+		// intentionally empty
 	}
 
 	public JPanel getContentComponent() {
@@ -68,7 +99,7 @@ public class Tab {
 	}
 
 	public boolean isActive() {
-		return tabPane.getSelectedComponent() == this.scrollpane;
+		return tabPane.getSelectedComponent() == this.scrollPane;
 	}
 
 	public JTabbedPane getTabPane() {
@@ -76,7 +107,7 @@ public class Tab {
 	}
 
 	public JScrollPane getScrollPane() {
-		return scrollpane;
+		return scrollPane;
 	}
 
 }
