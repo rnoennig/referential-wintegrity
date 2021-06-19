@@ -548,7 +548,12 @@ public class JdbcService {
 		sb.append("DELETE FROM ");
 		sb.append(stmtFormat.enquoteIdentifier(row.getTableName(), false));
 		sb.append(" WHERE ");
-		List<ColumnDefinition> columns = row.getTable().getTableDefinition().getPrimaryKey().get().getColumnDefinitions();
+		List<ColumnDefinition> columns;
+		if (row.getTable().getTableDefinition().getPrimaryUniqueConstraint().isPresent()) {
+			columns = row.getTable().getTableDefinition().getPrimaryUniqueConstraint().get().getColumnDefinitions();
+		} else {
+			columns = row.getTable().getTableDefinition().getColumnDefinitions();
+		}
 		for (int i = 0; i < columns.size(); i++) {
 			ColumnDefinition col = columns.get(i);
 			if (i > 0) {
