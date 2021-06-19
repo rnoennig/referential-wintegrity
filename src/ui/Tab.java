@@ -48,11 +48,11 @@ public class Tab {
 		JLabel tabLabel = new JLabel(this.title);
 		this.tabTitlePanel.add(tabLabel);
 		this.panel = panel;
-		this.tabPane.setTabComponentAt(tabPane.indexOfTab(title), this.tabTitlePanel);
+		this.tabPane.setTabComponentAt(tabPane.indexOfComponent(scrollPane), this.tabTitlePanel);
 		this.tabTitlePanel.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				tabPane.setSelectedIndex(tabPane.indexOfTab(title));
+				tabPane.setSelectedIndex(tabPane.indexOfComponent(scrollPane));
 			}
 		});
 
@@ -72,7 +72,7 @@ public class Tab {
 	}
 	
 	protected void onClose() {
-		int indexOfTabComponent = this.tabPane.indexOfTabComponent(this.tabTitlePanel);
+		int indexOfTabComponent = this.tabPane.indexOfComponent(this.scrollPane);
 		this.tabPane.removeTabAt(indexOfTabComponent);
 	}
 
