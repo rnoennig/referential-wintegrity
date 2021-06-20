@@ -40,6 +40,9 @@ import service.IniFile;
 import service.IniFileSection;
 import service.JvmArgumentConfig;
 
+/**
+ * Database access to data and metadata
+ */
 public class JdbcService {
 
 	private Schema schema;
@@ -81,8 +84,8 @@ public class JdbcService {
 	 * 
 	 * @return all tables in the connected database
 	 */
-	public Table<TableRow> selectAllTableNames() {
-		Table<TableRow> table = null;
+	public Table<TableRow, TableCell> selectAllTableNames() {
+		Table<TableRow, TableCell> table = null;
 		try {
 			Connection conn = createConnection();
 			DatabaseMetaData databaseMetaData = conn.getMetaData();
@@ -438,7 +441,7 @@ public class JdbcService {
 			DatabaseMetaData databaseMetaData = conn.getMetaData();
 			System.out.println("Selecting all tables");
 
-			Table<TableRow> tables = selectAllTableNames();
+			Table<TableRow, TableCell> tables = selectAllTableNames();
 			for (TableRow tableRow : tables.getTableRows()) {
 				String tableName = tableRow.getColumnValue(0).toString();
 				System.out.println("Reading schema: processing table " + tableName);

@@ -15,7 +15,7 @@ import ui.Main;
 import ui.Tab;
 
 /**
- * Groups together {@link DatabaseTableView}s that belong to a set of data
+ * Groups together {@link DatabaseTableView}s that belong to a result of a {@link DependentDatabaseTableRowsQuery}
  *
  */
 public class DatabaseTableViewGroup implements ActionListener {

@@ -2,7 +2,6 @@ package ui;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.JFrame;
@@ -12,16 +11,13 @@ import javax.swing.SwingWorker;
 
 import dao.JdbcService;
 import domain.DatabaseTable;
+import domain.DatabaseTableCell;
 import domain.DatabaseTableRow;
 import domain.DatabaseTableViewGroup;
 import domain.Table;
 import domain.TableCell;
 import domain.TableRow;
-import domain.ri.Constraint;
-import domain.ri.ForeignKey;
 import domain.ri.Schema;
-import domain.ri.TableDefinition;
-import domain.ri.UniqueConstraint;
 import service.JvmArgumentConfig;
 
 public class Main {
@@ -87,9 +83,8 @@ public class Main {
 						.get(0);
 				String tabTitle = "TEST";
 				DependentRowsTab dependentRowsTab = new DependentRowsTab(tabPane, tabTitle);
-				addDependentRowsTableViews(dependentRowsTab, (DatabaseTableRow)row);
-				int tabIndex = tabPane.getTabCount() - 1;
-				tabPane.setSelectedIndex(tabIndex);
+				createDependentRowsTableGroup(dependentRowsTab, (DatabaseTableRow)row);
+				dependentRowsTab.select();
 //				// DEMO
 			}
 		};
@@ -99,52 +94,23 @@ public class Main {
 	}
 
 	/**
-	 * 
+	 * Fetches all available tables from database
 	 * @param tabPane
 	 * @param eastWestPanel
 	 * @return a view with all tables
 	 */
 	protected void createTableSelectionView(JTabbedPane tabPane, JSplitPane eastWestPanel) {
-		SwingWorker<Table<TableRow>, Void> swingWorker = new SwingWorker<Table<TableRow>, Void>() {
+		SwingWorker<Table<TableRow, TableCell>, Void> swingWorker = new SwingWorker<>() {
 			@Override
-			protected Table<TableRow> doInBackground() throws Exception {
+			protected Table<TableRow, TableCell> doInBackground() throws Exception {
 				return Main.this.jdbcProvider.selectAllTableNames();
 			}
 
 			@Override
 			protected void done() {
 				try {
-					TableView<TableRow> allTablesView = new TableView<>(get(), true);
-					allTablesView.addClicklistener(new ClickAdapter() {
-						@Override
-						public void cellSelected(TableRow row, TableCell cell) {
-							String tableName = cell.getValue().toString();
-							QueryResultTab<DatabaseTable> tab = new QueryResultTab<>(tabPane, tableName);
-							
-							DatabaseTableQuery<DatabaseTable> query = new DatabaseTableQuery<>() {
-								
-								@Override
-								protected DatabaseTable doInBackground() throws Exception {
-									return Main.this.jdbcProvider.getTableRows(tableName);
-								}
-								
-								@Override
-								protected void done(DatabaseTable result) {
-									tab.getContentComponent().removeAll();
-									DatabaseTableView tableView = new DatabaseTableView(result);
-									tableView.setAutoHeight(true);
-									tableView.addClicklistener(createDependentRowClickListener(tabPane));
-									tab.getContentComponent().add(tableView);
-									tab.getContentComponent().revalidate();
-								}
-							};
-							query.execute();
-							
-							tab.setQuery(query);
-							
-							tabPane.setSelectedIndex(tabPane.getTabCount()-1);
-						}
-					});
+					TableView<TableRow, TableCell> allTablesView = new TableView<>(get(), true);
+					allTablesView.addClicklistener(createOnTableClickAdapter(tabPane));
 					eastWestPanel.setLeftComponent(allTablesView);
 					eastWestPanel.setDividerLocation(150);
 				} catch (InterruptedException | ExecutionException e) {
@@ -156,32 +122,48 @@ public class Main {
 		swingWorker.execute();
 	}
 	
-	protected ClickAdapter createDependentRowClickListener(JTabbedPane tabPane) {
-		return new ClickAdapter() {
+	/**
+	 * Creates a query that fetches all rows of a table and populating a tab with the result
+	 * @param tabPane
+	 * @param tableName
+	 * @param tab
+	 * @return
+	 */
+	protected DatabaseTableQuery<DatabaseTable> createQueryForFetchingAllsTableRows(JTabbedPane tabPane, String tableName,
+			QueryResultTab<DatabaseTable> tab) {
+		return new DatabaseTableQuery<>() {
+			
 			@Override
-			public void cellSelected(TableRow row, TableCell cell) {
-				Constraint constraint;
-				
-				TableDefinition tableDefinition = ((DatabaseTable)row.getTable()).getTableDefinition();
-				Optional<UniqueConstraint> primaryUniqueConstraints = tableDefinition.getPrimaryUniqueConstraint();
-				List<ForeignKey> foreignKeys = tableDefinition.getForeignKeys();
-				if (primaryUniqueConstraints.isEmpty() && foreignKeys.isEmpty()) {
+			protected DatabaseTable doInBackground() throws Exception {
+				return Main.this.jdbcProvider.getTableRows(tableName);
+			}
+			
+			@Override
+			protected void done(DatabaseTable result) {
+				tab.getContentComponent().removeAll();
+				DatabaseTableView tableView = new DatabaseTableView(result);
+				tableView.setAutoHeight(true);
+				tableView.addClicklistener(createDependentRowClickListener(tabPane));
+				tab.getContentComponent().add(tableView);
+				tab.getContentComponent().revalidate();
+			}
+		};
+	}
+	
+	protected TableViewClickAdapter<DatabaseTableRow, DatabaseTableCell> createDependentRowClickListener(JTabbedPane tabPane) {
+		return new TableViewClickAdapter<DatabaseTableRow, DatabaseTableCell>() {
+			@Override
+			public void cellSelected(DatabaseTableRow row, DatabaseTableCell cell) {
+				if (row.hasNoRelations()) {
 					// TODO show some kind of error message, that no PK is defined?
 					System.err.println("Cannot open dependend[ent|ing] rows because neither unique keys nor foreign keys were found");
 					return;
 				}
-				if (primaryUniqueConstraints.isPresent()) {
-					constraint = primaryUniqueConstraints.get();
-				} else {
-					constraint = foreignKeys.get(0);
-				}
-				
-				String tabTitle = row.getTableName() + "#" + constraint.getColumnDefinitions() + "="
-						+ row.getColumnValues(constraint.getColumnDefinitions());
+				String tabTitle = row.getUniqueDescription();
 				DependentRowsTab dependentRowsTab = new DependentRowsTab(tabPane, tabTitle);
-				addDependentRowsTableViews(dependentRowsTab, (DatabaseTableRow)row);
-				int tabIndex = tabPane.getTabCount() - 1;
-				tabPane.setSelectedIndex(tabIndex);
+				DatabaseTableViewGroup databaseTableGroup = createDependentRowsTableGroup(dependentRowsTab, row);
+				databaseTableGroup.executeQuery();
+				dependentRowsTab.select();
 			}
 		};
 	}
@@ -190,26 +172,45 @@ public class Main {
 	 * 
 	 * @param tab
 	 * @param row
-	 * @return a panel with all table and all dependent rows for the given row
 	 */
-	protected void addDependentRowsTableViews(Tab tab, DatabaseTableRow row) {
+	protected DatabaseTableViewGroup createDependentRowsTableGroup(Tab tab, DatabaseTableRow row) {
 		DatabaseTableViewGroup databaseTableGroup = new DatabaseTableViewGroup(tab);
-		DependentDatabaseTableRowsQuery dependentRowsQuery = new DependentDatabaseTableRowsQuery(row) {
+		DependentDatabaseTableRowsQuery dependentRowsQuery = createQueryForDependentTableRows(tab, row, databaseTableGroup);
+		databaseTableGroup.setDependentRowsQuery(dependentRowsQuery);
+		tab.addActionListener(databaseTableGroup);
+		return databaseTableGroup;
+	}
 
+	private DependentDatabaseTableRowsQuery createQueryForDependentTableRows(Tab tab, DatabaseTableRow row,
+			DatabaseTableViewGroup databaseTableGroup) {
+		return new DependentDatabaseTableRowsQuery(row) {
 			@Override
 			protected void done(List<DatabaseTable> result) {
 				for (DatabaseTable dependentTables : result) {
 					DatabaseTableView databaseTableView = new DatabaseTableView(dependentTables);
 					databaseTableView.addClicklistener(createDependentRowClickListener(tab.getTabPane()));
 					databaseTableGroup.add(databaseTableView);
-					// fix scroll issue
+					// scroll parent when child cannot scoll further but parent could
 					databaseTableView.getScrollPane().addMouseWheelListener(new MouseWheelScrollListener(databaseTableView.getScrollPane()));
 				}
 			}
 		};
-		databaseTableGroup.setDependentRowsQuery(dependentRowsQuery);
-		tab.addActionListener(databaseTableGroup);
-		databaseTableGroup.executeQuery();
+	}
+
+	private TableViewClickAdapter<TableRow, TableCell> createOnTableClickAdapter(JTabbedPane tabPane) {
+		return new TableViewClickAdapter<TableRow, TableCell>() {
+			@Override
+			public void cellSelected(TableRow row, TableCell cell) {
+				String tableName = cell.getValue().toString();
+				QueryResultTab<DatabaseTable> tab = new QueryResultTab<>(tabPane, tableName);
+				
+				DatabaseTableQuery<DatabaseTable> query = createQueryForFetchingAllsTableRows(tabPane, tableName, tab);
+				query.execute();
+				
+				tab.setQuery(query);
+				tab.select();
+			}
+		};
 	}
 
 }

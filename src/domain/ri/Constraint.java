@@ -3,7 +3,10 @@ package domain.ri;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Constraint {
+/**
+ * Abstract constraint of a table
+ */
+public abstract class Constraint {
 
 	private TableDefinition tableDefinition;
 	protected String name;

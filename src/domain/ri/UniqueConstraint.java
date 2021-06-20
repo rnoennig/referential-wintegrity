@@ -3,6 +3,10 @@ package domain.ri;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Constraint that guarantees uniqueness in its defining table over the defined
+ * columns
+ */
 public class UniqueConstraint extends Constraint {
 
 	protected List<ForeignKey> referencingForeignKeys = new ArrayList<>();
@@ -17,6 +21,10 @@ public class UniqueConstraint extends Constraint {
 		}
 	}
 
+	/**
+	 * 
+	 * @return a list of all foreign key constraints referencing this unique constraint
+	 */
 	public List<ForeignKey> getReferencingForeignKeys() {
 		return referencingForeignKeys;
 	}

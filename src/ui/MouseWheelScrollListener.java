@@ -8,30 +8,35 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
+/**
+ * Scrolls the next scrollpane up the parent hierarchy when the current
+ * component cannot scroll further but the higher up scrollpane could.
+ *
+ */
 public final class MouseWheelScrollListener implements MouseWheelListener {
 
-    private final JScrollPane pane;
-    private int previousValue;
+	private final JScrollPane pane;
+	private int previousValue;
 
-    public MouseWheelScrollListener(JScrollPane pane) {
-        this.pane = pane;
-        previousValue = pane.getVerticalScrollBar().getValue();
-    }
+	public MouseWheelScrollListener(JScrollPane pane) {
+		this.pane = pane;
+		previousValue = pane.getVerticalScrollBar().getValue();
+	}
 
-    public void mouseWheelMoved(MouseWheelEvent e) {
-        Component parent = pane.getParent();
-        while (!(parent instanceof JScrollPane)) {
-            if (parent == null) {
-                return;
-            }
-            parent = parent.getParent();
-        }
+	public void mouseWheelMoved(MouseWheelEvent e) {
+		Component parent = pane.getParent();
+		while (!(parent instanceof JScrollPane)) {
+			if (parent == null) {
+				return;
+			}
+			parent = parent.getParent();
+		}
 
-        JScrollBar bar = pane.getVerticalScrollBar();
-        int limit = e.getWheelRotation() < 0 ? 0 : bar.getMaximum() - bar.getVisibleAmount();
-        if (previousValue == limit && bar.getValue() == limit) {
-            parent.dispatchEvent(SwingUtilities.convertMouseEvent(pane, e, parent));
-        }
-        previousValue = bar.getValue();
-    }
+		JScrollBar bar = pane.getVerticalScrollBar();
+		int limit = e.getWheelRotation() < 0 ? 0 : bar.getMaximum() - bar.getVisibleAmount();
+		if (previousValue == limit && bar.getValue() == limit) {
+			parent.dispatchEvent(SwingUtilities.convertMouseEvent(pane, e, parent));
+		}
+		previousValue = bar.getValue();
+	}
 }

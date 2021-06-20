@@ -6,7 +6,6 @@ import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,14 +26,20 @@ import domain.Table;
 import domain.TableCell;
 import domain.TableRow;
 
-public class TableView<T extends TableRow> extends JPanel {
+/**
+ * Panel with a JTable that can display tabular data
+ *
+ * @param <T> table row
+ * @param <U> table cell
+ */
+public class TableView<T extends TableRow, U extends TableCell> extends JPanel {
 	private static final long serialVersionUID = 1L;
 	
-	private List<ClickAdapter> clickAdapters = new LinkedList<>();
+	private List<TableViewClickAdapter<T, U>> clickAdapters = new LinkedList<>();
 	
 	protected JTable jTable;
 	
-	protected Table<T> table;
+	protected Table<T, U> table;
 	
 	private boolean autoWidth = false;
 
@@ -42,7 +47,7 @@ public class TableView<T extends TableRow> extends JPanel {
 
 	private JScrollPane scrollPane;
 
-	public TableView(Table<T> table, boolean autoWidth) {
+	public TableView(Table<T, U> table, boolean autoWidth) {
 		super();
 		this.table = table;
 		this.autoWidth = autoWidth;
@@ -66,14 +71,15 @@ public class TableView<T extends TableRow> extends JPanel {
 				return table.getColumnCount();
 			}
 
+			@SuppressWarnings("unchecked")
 			@Override
 			public Object getValueAt(int rowIndex, int columnIndex) {
-				TableCell tableCell;
+				U tableCell;
 
 				if (rowIndex < 0) {
-					tableCell = table.getTableHeader().get(columnIndex);
+					tableCell = (U) table.getTableHeader().get(columnIndex);
 				} else {
-					tableCell = table.getTableRows().get(rowIndex).getValues().get(columnIndex);
+					tableCell = (U) table.getTableRows().get(rowIndex).getValues().get(columnIndex);
 				}
 				return tableCell;
 			}
@@ -92,11 +98,14 @@ public class TableView<T extends TableRow> extends JPanel {
 				if (e.getClickCount() < 2) {
 					return;
 				}
-				int row = jTable.rowAtPoint(e.getPoint());
-				int rowModelIndex = jTable.convertRowIndexToModel(row);
-				int col = jTable.columnAtPoint(e.getPoint());
-				for (ClickAdapter clickAdapter : clickAdapters) {
-					clickAdapter.cellSelected(table.getTableRows().get(rowModelIndex), (TableCell)jTable.getValueAt(row, col));
+				int rowViewIndex = jTable.rowAtPoint(e.getPoint());
+				int rowModelIndex = jTable.convertRowIndexToModel(rowViewIndex);
+				int colViewIndex = jTable.columnAtPoint(e.getPoint());
+				for (TableViewClickAdapter<T, U> clickAdapter : clickAdapters) {
+					T rowObj = table.getTableRows().get(rowModelIndex);
+					@SuppressWarnings("unchecked")
+					U cellObj = (U) jTable.getValueAt(rowViewIndex, colViewIndex);
+					clickAdapter.cellSelected(rowObj, cellObj);
 				}
 			}
 		});
@@ -170,7 +179,7 @@ public class TableView<T extends TableRow> extends JPanel {
 		this.autoWidth = autoWidth;
 	}
 
-	public void addClicklistener(ClickAdapter clickAdapter) {
+	public void addClicklistener(TableViewClickAdapter<T, U> clickAdapter) {
 		this.clickAdapters.add(clickAdapter);
 	}
 	
@@ -206,19 +215,11 @@ public class TableView<T extends TableRow> extends JPanel {
 		tableCellRenderer.setText(cellText);
 	}
 
-	private String renderCellType(Object cellValue) {
-		try {
-			if (cellValue instanceof oracle.sql.TIMESTAMPTZ) {
-				return ((oracle.sql.TIMESTAMPTZ) cellValue).localDateTimeValue().toString();
-			}
-		} catch (SQLException e) {
-			// ignore
-		}
-		
+	protected String renderCellType(Object cellValue) {
 		return cellValue.toString();
 	}
 
-	public Table<T> getTable() {
+	public Table<T, U> getTable() {
 		return this.table;
 	}
 

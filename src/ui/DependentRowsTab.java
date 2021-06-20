@@ -9,6 +9,12 @@ import javax.swing.JTabbedPane;
 import domain.DatabaseTable;
 import domain.DatabaseTableViewGroup;
 
+/**
+ * Tab component that can send out actions for exporting data as SQL inserts and
+ * deletes
+ * 
+ *
+ */
 public class DependentRowsTab extends QueryResultTab<List<DatabaseTable>> {
 
 	public static final String COMMAND_EXPORT_INSERT = "export_insert";
@@ -18,7 +24,7 @@ public class DependentRowsTab extends QueryResultTab<List<DatabaseTable>> {
 
 	public DependentRowsTab(JTabbedPane tabPane, String title) {
 		super(tabPane, title);
-		
+
 		exportInsertMenuItem = new JMenuItem("Export as INSERT statements");
 		exportInsertMenuItem.setActionCommand(COMMAND_EXPORT_INSERT);
 		menu.add(exportInsertMenuItem);
@@ -29,7 +35,7 @@ public class DependentRowsTab extends QueryResultTab<List<DatabaseTable>> {
 	}
 
 	/**
-	 * @see DatabaseTableViewGroup which handles all commands
+	 * @see DatabaseTableViewGroup which handles these commands
 	 */
 	@Override
 	public void addActionListener(ActionListener listener) {

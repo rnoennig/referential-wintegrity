@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * All metadata for a database schema
+ */
 public class Schema {
 	
 	Map<String, TableDefinition> tableDefinitionsByName = new HashMap<>();

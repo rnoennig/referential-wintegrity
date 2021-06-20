@@ -26,7 +26,7 @@ public class Tab {
 	protected JTabbedPane tabPane;
 	protected JPanel tabTitlePanel;
 	protected JPanel panel;
-	private JScrollPane scrollPane;
+	protected JScrollPane scrollPane;
 	
 	protected JPopupMenu menu;
 	private JMenuItem closeMenuItem;
@@ -40,6 +40,7 @@ public class Tab {
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		scrollPane = new JScrollPane(panel);
+		scrollPane.getHorizontalScrollBar().setUnitIncrement(4);
 		scrollPane.getVerticalScrollBar().setUnitIncrement(4);
 
 		this.tabPane.addTab(this.title, scrollPane);
@@ -110,4 +111,10 @@ public class Tab {
 		return scrollPane;
 	}
 
+	/**
+	 * make this tab the selected tab
+	 */
+	public void select() {
+		this.tabPane.setSelectedComponent(this.scrollPane);
+	}
 }

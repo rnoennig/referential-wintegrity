@@ -1,5 +1,8 @@
 package domain.ri;
 
+/**
+ * A named column of a table
+ */
 public class ColumnDefinition {
 	private TableDefinition tableDefinition;
 	private String columnName;

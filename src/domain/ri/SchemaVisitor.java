@@ -2,6 +2,9 @@ package domain.ri;
 
 import java.util.Set;
 
+/**
+ * Visitor that can be used with a {@link Schema}
+ */
 public abstract class SchemaVisitor {
 	protected Set<TableDefinition> visited;
 	

@@ -1,5 +1,8 @@
 package domain;
 
+/**
+ * A single value of a record 
+ */
 public class TableCell {
 
 	protected Object value;
@@ -9,6 +12,7 @@ public class TableCell {
 		this.value = value;
 	}
 
+	// TODO move header to tablerow
 	public TableCell(Object value, boolean header) {
 		this(value);
 		this.header = header;

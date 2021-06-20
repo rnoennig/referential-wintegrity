@@ -5,13 +5,20 @@ import java.util.List;
 
 import domain.ri.TableDefinition;
 
-public class DatabaseTable extends Table<DatabaseTableRow> {
+/**
+ * 
+ */
+public class DatabaseTable extends Table<DatabaseTableRow, DatabaseTableCell> {
 	
 	private TableDefinition tableDefinition;
 
 	public DatabaseTable() {
 	}
 
+	/**
+	 * Initializes this instance based on the given {@link DatabaseTable}
+	 * @param table
+	 */
 	public DatabaseTable(DatabaseTable table) {
 		this.header = new ArrayList<>();
 		for (TableCell tableCell : table.getTableHeader()) {

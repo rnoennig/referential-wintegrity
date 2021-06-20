@@ -3,6 +3,9 @@ package dao;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+/**
+ * Converts database vendor specific types to SQL expressions
+ */
 public class DatabaseTypeFormatter {
 
 	public Object format(Object columnValue, Statement stmtFormat) throws SQLException {

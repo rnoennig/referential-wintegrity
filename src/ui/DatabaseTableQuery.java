@@ -4,6 +4,11 @@ import java.util.concurrent.ExecutionException;
 
 import javax.swing.SwingWorker;
 
+/**
+ * Query object that can be executed again to refresh results
+ *
+ * @param <T> result from the database
+ */
 public abstract class DatabaseTableQuery<T> {
 
 	public DatabaseTableQuery() {
@@ -12,7 +17,7 @@ public abstract class DatabaseTableQuery<T> {
 	protected abstract T doInBackground() throws Exception;
 	
 	public void execute() {
-		SwingWorker<T, Void> swingWorker = new SwingWorker<T, Void>() {
+		SwingWorker<T, Void> swingWorker = new SwingWorker<>() {
 			@Override
 			protected T doInBackground() throws Exception {
 				return DatabaseTableQuery.this.doInBackground();

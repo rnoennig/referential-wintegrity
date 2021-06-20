@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Metadata of a database table
+ */
 public class TableDefinition {
 	private Schema schema;
 	private String tableName;
@@ -109,6 +112,6 @@ public class TableDefinition {
 		if (!this.uniqueConstraints.isEmpty()) {
 			return Optional.of(this.uniqueConstraints.get(0));
 		}
-		return Optional.ofNullable(null);
+		return Optional.empty();
 	}
 }

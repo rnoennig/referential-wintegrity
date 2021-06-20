@@ -6,6 +6,9 @@ import domain.ri.ColumnDefinition;
 import domain.ri.PrimaryKey;
 import domain.ri.TableDefinition;
 
+/**
+ * Cell corresponding to a database query result's column
+ */
 public class DatabaseTableCell extends TableCell {
 	
 	private TableDefinition tableDefinition;

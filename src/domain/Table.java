@@ -6,10 +6,9 @@ import ui.TextWidthCalculator;
 
 /**
  * Represents a set of {@link TableRow}s
- * @author wiesel
  *
  */
-public class Table<T extends TableRow> {
+public class Table<T extends TableRow, U extends TableCell> {
 	List<T> data;
 	List<TableCell> header;
 	List<String> columnNames;
@@ -46,31 +45,6 @@ public class Table<T extends TableRow> {
 		return this.columnNames.size();
 	}
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((tableName == null) ? 0 : tableName.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Table<?> other = (Table<?>) obj;
-		if (tableName == null) {
-			if (other.tableName != null)
-				return false;
-		} else if (!tableName.equals(other.tableName))
-			return false;
-		return true;
-	}
-
 	public List<TableCell> getTableHeader() {
 		return header;
 	}
@@ -83,6 +57,12 @@ public class Table<T extends TableRow> {
 		return this.columnNames.indexOf(columnName);
 	}
 
+	/**
+	 * 
+	 * @param textWidthCalculator
+	 * @param columnName
+	 * @return size of the column for the longest value in all rows
+	 */
 	public int getMaxColumnSize(TextWidthCalculator textWidthCalculator, String columnName) {
 		int maxLength = 0;
 		for (TableRow tableRow : data) {
@@ -94,5 +74,30 @@ public class Table<T extends TableRow> {
 			maxLength = len > maxLength ? len : maxLength; 
 		}
 		return maxLength;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Table<?,?> other = (Table<?,?>) obj;
+		if (tableName == null) {
+			if (other.tableName != null)
+				return false;
+		} else if (!tableName.equals(other.tableName))
+			return false;
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((tableName == null) ? 0 : tableName.hashCode());
+		return result;
 	}
 }

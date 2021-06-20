@@ -3,6 +3,7 @@ package ui;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +23,7 @@ import domain.ri.TableDefinition;
  * TableView with the content of physical database columns as table columns
  *
  */
-public class DatabaseTableView extends TableView<DatabaseTableRow> {
+public class DatabaseTableView extends TableView<DatabaseTableRow, DatabaseTableCell> {
 	private static final long serialVersionUID = 1L;
 
 	public DatabaseTableView(DatabaseTable table) {
@@ -62,5 +63,18 @@ public class DatabaseTableView extends TableView<DatabaseTableRow> {
 		if (((DatabaseTableCell)cell).isForeignKey()) {
 			result.setForeground(Color.RED);
 		}
+	}
+	
+	protected String renderCellType(Object cellValue) {
+		try {
+			// TODO how to make this modular
+			if (cellValue instanceof oracle.sql.TIMESTAMPTZ) {
+				return ((oracle.sql.TIMESTAMPTZ) cellValue).localDateTimeValue().toString();
+			}
+		} catch (SQLException e) {
+			// ignore
+		}
+		
+		return super.renderCellType(cellValue);
 	}
 }

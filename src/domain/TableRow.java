@@ -6,14 +6,14 @@ import java.util.stream.Collectors;
 import domain.ri.ColumnDefinition;
 
 /**
- * Represents a record originating from a database table row 
+ * Represents a single record 
  *
  */
 public class TableRow {
-	protected Table<? extends TableRow> table;
+	protected Table<? extends TableRow, ? extends TableCell> table;
 	
 	private List<? extends TableCell> values;
-	public TableRow(Table<? extends TableRow> table, List<? extends TableCell> values) {
+	public TableRow(Table<? extends TableRow, ? extends TableCell> table, List<? extends TableCell> values) {
 		this.table = table;
 		this.values = values;
 	}
@@ -21,11 +21,11 @@ public class TableRow {
 	public String getTableName() {
 		return table.getTableName();
 	}
-	public Table<? extends TableRow> getTable() {
+	public Table<? extends TableRow, ? extends TableCell> getTable() {
 		return table;
 	}
 
-	public void setTable(Table<? extends TableRow> table) {
+	public void setTable(Table<? extends TableRow, ? extends TableCell> table) {
 		this.table = table;
 	}
 
@@ -86,8 +86,5 @@ public class TableRow {
 		} else if (!values.equals(other.values))
 			return false;
 		return true;
-	}
-
-	
-	
+	}	
 }

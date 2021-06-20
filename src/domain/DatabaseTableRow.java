@@ -5,10 +5,15 @@ import java.util.List;
 import java.util.Optional;
 
 import domain.ri.ColumnDefinition;
+import domain.ri.Constraint;
 import domain.ri.ForeignKey;
 import domain.ri.TableDefinition;
 import domain.ri.UniqueConstraint;
 
+/**
+ * Represents a record originating from a database table row 
+ *
+ */
 public class DatabaseTableRow extends TableRow {
 	public DatabaseTableRow(DatabaseTable table, List<DatabaseTableCell> row) {
 		super(table, row);
@@ -21,6 +26,45 @@ public class DatabaseTableRow extends TableRow {
 	@Override
 	public DatabaseTable getTable() {
 		return (DatabaseTable)super.getTable();
+	}
+	
+	/**
+	 * 
+	 * @return a unique description of this table row if possible
+	 */
+	// TODO compare with #toString()
+	public String getUniqueDescription() {
+		
+		TableDefinition tableDefinition = ((DatabaseTable)this.getTable()).getTableDefinition();
+		Optional<UniqueConstraint> primaryUniqueConstraints = tableDefinition.getPrimaryUniqueConstraint();
+		List<ForeignKey> foreignKeys = tableDefinition.getForeignKeys();
+		StringBuilder tabTitle = new StringBuilder(this.getTableName());
+
+		Constraint constraint = null;
+		if (primaryUniqueConstraints.isPresent()) {
+			constraint = primaryUniqueConstraints.get();
+		} else if (!foreignKeys.isEmpty()) {
+			constraint = foreignKeys.get(0);
+		}
+		if (constraint != null) {
+			tabTitle.append("#");
+			tabTitle.append(constraint.getColumnDefinitions());
+			tabTitle.append("=");
+			tabTitle.append(this.getColumnValues(constraint.getColumnDefinitions()));
+		}
+		 
+		return tabTitle.toString();
+	}
+
+	/**
+	 * 
+	 * @return <tt>true</tt> if there are no unique and foreign constraints for this row
+	 */
+	public boolean hasNoRelations() {
+		TableDefinition tableDefinition = ((DatabaseTable)this.getTable()).getTableDefinition();
+		Optional<UniqueConstraint> primaryUniqueConstraints = tableDefinition.getPrimaryUniqueConstraint();
+		List<ForeignKey> foreignKeys = tableDefinition.getForeignKeys();
+		return primaryUniqueConstraints.isEmpty() && foreignKeys.isEmpty();
 	}
 
 	@Override
