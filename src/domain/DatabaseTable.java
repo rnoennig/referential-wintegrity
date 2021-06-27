@@ -6,7 +6,7 @@ import java.util.List;
 import domain.ri.TableDefinition;
 
 /**
- * 
+ * Database table model representing a table of {@link DatabaseTableRow}s
  */
 public class DatabaseTable extends Table<DatabaseTableRow, DatabaseTableCell> {
 	

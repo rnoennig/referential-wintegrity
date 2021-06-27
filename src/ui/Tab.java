@@ -24,7 +24,7 @@ public class Tab {
 
 	protected String title;
 	protected JTabbedPane tabPane;
-	protected JPanel tabTitlePanel;
+	protected JLabel tabTitleLabel;
 	protected JPanel panel;
 	protected JScrollPane scrollPane;
 	
@@ -44,13 +44,11 @@ public class Tab {
 		scrollPane.getVerticalScrollBar().setUnitIncrement(4);
 
 		this.tabPane.addTab(this.title, scrollPane);
-		this.tabTitlePanel = new JPanel();
-		this.tabTitlePanel.setBackground(new Color(0,0,0,0));
-		JLabel tabLabel = new JLabel(this.title);
-		this.tabTitlePanel.add(tabLabel);
+		this.tabTitleLabel = new JLabel(this.title);
+		this.tabTitleLabel.setBackground(new Color(0,0,0,0));
 		this.panel = panel;
-		this.tabPane.setTabComponentAt(tabPane.indexOfComponent(scrollPane), this.tabTitlePanel);
-		this.tabTitlePanel.addMouseListener(new MouseAdapter() {
+		this.tabPane.setTabComponentAt(tabPane.indexOfComponent(scrollPane), this.tabTitleLabel);
+		this.tabTitleLabel.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				tabPane.setSelectedIndex(tabPane.indexOfComponent(scrollPane));
@@ -69,7 +67,7 @@ public class Tab {
 		}); 
 		menu.add(closeMenuItem);
 		
-		this.tabTitlePanel.setComponentPopupMenu(menu);
+		this.tabTitleLabel.setComponentPopupMenu(menu);
 	}
 	
 	protected void onClose() {
