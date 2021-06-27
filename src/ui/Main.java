@@ -9,6 +9,8 @@ import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingWorker;
 
+import com.formdev.flatlaf.FlatDarkLaf;
+
 import dao.JdbcService;
 import domain.DatabaseTable;
 import domain.DatabaseTableCell;
@@ -44,6 +46,7 @@ public class Main {
 	}
 
 	private void run() {
+		FlatDarkLaf.setup();
 		JFrame frame = new JFrame("Referential Wintegrity");
 
 		frame.setSize(800, 600);

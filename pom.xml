@@ -28,5 +28,10 @@
 			<artifactId>ojdbc8</artifactId>
 			<version>21.1.0.0</version>
 		</dependency>
+ 		<dependency>
+			<groupId>com.formdev</groupId>
+			<artifactId>flatlaf</artifactId>
+			<version>1.2</version>
+		</dependency>
 	</dependencies>
 </project>
