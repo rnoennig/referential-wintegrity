@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -47,16 +48,26 @@ public class TableView<T extends TableRow, U extends TableCell> extends JPanel {
 
 	private JScrollPane scrollPane;
 
-	public TableView(Table<T, U> table, boolean autoWidth) {
+	private boolean tableHeaderVisible = true;
+
+	private boolean tableNameVisible = true;
+
+	private JLabel tableNameLabel;
+
+	public TableView(Table<T, U> table, boolean autoWidth, boolean tableNameVisible, boolean tableHeaderVisible) {
 		super();
 		this.table = table;
 		this.autoWidth = autoWidth;
+		this.tableHeaderVisible = tableHeaderVisible;
+		this.tableNameVisible = tableNameVisible;
 
 		this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
-		JLabel label = new JLabel(table.getTableName());
-		label.setAlignmentX(Component.LEFT_ALIGNMENT);
-		this.add(label);
+		this.tableNameLabel = new JLabel(table.getTableName());
+		this.tableNameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		if (this.tableNameVisible) {
+			this.add(this.tableNameLabel);
+		}
 
 		TableModel dm = new AbstractTableModel() {
 			private static final long serialVersionUID = 1L;
@@ -109,13 +120,18 @@ public class TableView<T extends TableRow, U extends TableCell> extends JPanel {
 				}
 			}
 		});
+		
 		jTable.getTableHeader().setDefaultRenderer(
 				createStylePresevingCellRenderer(jTable.getTableHeader().getDefaultRenderer()));
 		jTable.setDefaultRenderer(Object.class,
 				createStylePresevingCellRenderer(jTable.getDefaultRenderer(Object.class)));
 		
-		if (!autoWidth) {
+		if (!this.autoWidth) {
 			resizeColumnsToFitContent(true);
+		}
+		
+		if (!this.tableHeaderVisible) {
+			jTable.setTableHeader(null);
 		}
 		
 		// if the table doesn't specify a preferred scrollable viewport size the default
@@ -154,6 +170,9 @@ public class TableView<T extends TableRow, U extends TableCell> extends JPanel {
 		};
 		scrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
 		this.add(scrollPane);
+		JLabel comp = new JLabel();
+		comp.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+		this.add(comp);
 	}
 
 	private void resizeColumnsToFitContent(boolean includeHeader) {
@@ -229,5 +248,19 @@ public class TableView<T extends TableRow, U extends TableCell> extends JPanel {
 	
 	public JScrollPane getScrollPane() {
 		return scrollPane;
+	}
+	
+	@Override
+	public Dimension preferredSize() {
+		Dimension tableMaxSize = this.scrollPane.getMaximumSize();
+		int height = tableMaxSize.height;
+		int width = tableMaxSize.width;
+				
+		if (TableView.this.tableNameVisible) {
+			height += TableView.this.tableNameLabel.getPreferredSize().height;
+		}
+		
+		height += 10;
+		return new Dimension(width, height);
 	}
 }

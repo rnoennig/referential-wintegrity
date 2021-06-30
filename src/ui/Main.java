@@ -1,5 +1,6 @@
 package ui;
 
+import java.awt.Color;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -8,6 +9,7 @@ import javax.swing.JFrame;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingWorker;
+import javax.swing.UIManager;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 
@@ -47,6 +49,9 @@ public class Main {
 
 	private void run() {
 		FlatDarkLaf.setup();
+		UIManager.put("Table.showHorizontalLines", true);
+		UIManager.put("Table.showVerticalLines", true);
+		UIManager.put("Table.alternateRowColor", new Color(78, 83, 84));
 		JFrame frame = new JFrame("Referential Wintegrity");
 
 		frame.setSize(800, 600);
@@ -112,7 +117,7 @@ public class Main {
 			@Override
 			protected void done() {
 				try {
-					TableView<TableRow, TableCell> allTablesView = new TableView<>(get(), true);
+					TableView<TableRow, TableCell> allTablesView = new TableView<>(get(), true, false, false);
 					allTablesView.addClicklistener(createOnTableClickAdapter(tabPane));
 					eastWestPanel.setLeftComponent(allTablesView);
 					eastWestPanel.setDividerLocation(150);
@@ -143,12 +148,11 @@ public class Main {
 			
 			@Override
 			protected void done(DatabaseTable result) {
-				tab.getContentComponent().removeAll();
+				tab.clear();
 				DatabaseTableView tableView = new DatabaseTableView(result);
 				tableView.setAutoHeight(true);
 				tableView.addClicklistener(createDependentRowClickListener(tabPane));
-				tab.getContentComponent().add(tableView);
-				tab.getContentComponent().revalidate();
+				tab.addContentComponent(tableView);
 			}
 		};
 	}
@@ -193,7 +197,7 @@ public class Main {
 					DatabaseTableView databaseTableView = new DatabaseTableView(dependentTables);
 					databaseTableView.addClicklistener(createDependentRowClickListener(tab.getTabPane()));
 					databaseTableGroup.add(databaseTableView);
-					// scroll parent when child cannot scoll further but parent could
+					// scroll parent when child cannot scroll further but parent could
 					databaseTableView.getScrollPane().addMouseWheelListener(new MouseWheelScrollListener(databaseTableView.getScrollPane()));
 				}
 			}

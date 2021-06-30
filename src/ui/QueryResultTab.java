@@ -1,8 +1,11 @@
 package ui;
 
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JTabbedPane;
 
@@ -28,6 +31,9 @@ public class QueryResultTab<T> extends Tab {
 		refreshMenuItem = new JMenuItem("Refresh");
 		refreshMenuItem.setActionCommand(COMMAND_REFRESH);
 		menu.add(refreshMenuItem);
+		
+		GridBagLayout gridbag = new GridBagLayout();
+		panel.setLayout(gridbag);
 	}
 
 	public void setQuery(DatabaseTableQuery<T> query) {
@@ -50,5 +56,16 @@ public class QueryResultTab<T> extends Tab {
 		refreshMenuItem.addActionListener(listener);
 	}
 	
+	@Override
+	public void addContentComponent(JComponent component) {
+		GridBagConstraints c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = GridBagConstraints.RELATIVE;
+		c.anchor = GridBagConstraints.WEST;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.weightx = 1;
+		this.panel.add(component, c);
+		panel.revalidate();
+	}
 	
 }

@@ -37,17 +37,16 @@ public class Tab {
 		this.tabPane = tabPane;
 		this.title = title;
 		
-		JPanel panel = new JPanel();
+		this.panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		scrollPane = new JScrollPane(panel);
 		scrollPane.getHorizontalScrollBar().setUnitIncrement(4);
 		scrollPane.getVerticalScrollBar().setUnitIncrement(4);
 
 		this.tabPane.addTab(this.title, scrollPane);
+		this.tabPane.setTabComponentAt(tabPane.indexOfComponent(scrollPane), this.tabTitleLabel);
 		this.tabTitleLabel = new JLabel(this.title);
 		this.tabTitleLabel.setBackground(new Color(0,0,0,0));
-		this.panel = panel;
-		this.tabPane.setTabComponentAt(tabPane.indexOfComponent(scrollPane), this.tabTitleLabel);
 		this.tabTitleLabel.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
@@ -81,10 +80,6 @@ public class Tab {
 	 */
 	public void addActionListener(ActionListener listener) {
 		// intentionally empty
-	}
-
-	public JPanel getContentComponent() {
-		return panel;
 	}
 
 	public void addContentComponent(JComponent component) {

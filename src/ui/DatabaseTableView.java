@@ -10,6 +10,7 @@ import java.util.List;
 import javax.swing.JLabel;
 import javax.swing.RowSorter;
 import javax.swing.SortOrder;
+import javax.swing.UIManager;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
@@ -27,7 +28,7 @@ public class DatabaseTableView extends TableView<DatabaseTableRow, DatabaseTable
 	private static final long serialVersionUID = 1L;
 
 	public DatabaseTableView(DatabaseTable table) {
-		super(table, false);
+		super(table, false, true, true);
 		TableModel model = this.jTable.getModel();
 		TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>(model) {
 			@Override
@@ -55,13 +56,17 @@ public class DatabaseTableView extends TableView<DatabaseTableRow, DatabaseTable
 	protected void renderCell(JLabel tableCellRenderer, Component result, TableCell cell) {
 		// sets the text of the cell
 		super.renderCell(tableCellRenderer, result, cell);
-		
-		result.setForeground(Color.BLACK);
+		Color textColor = UIManager.getColor("controlText");
+		// RED 175 75 105
+		// ORANGE 175 115 75
+		// GREEN 105 175 75
+		result.setForeground(textColor);
+
+		if (((DatabaseTableCell)cell).isForeignKey()) {
+			result.setFont(result.getFont().deriveFont(Font.ITALIC, result.getFont().getSize()));
+		}
 		if (((DatabaseTableCell)cell).isPrimaryKey()) {
 			result.setFont(result.getFont().deriveFont(Font.BOLD, result.getFont().getSize()));
-		}
-		if (((DatabaseTableCell)cell).isForeignKey()) {
-			result.setForeground(Color.RED);
 		}
 	}
 	
