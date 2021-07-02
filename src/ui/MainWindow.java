@@ -1,6 +1,8 @@
 package ui;
 
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -135,7 +137,7 @@ public class MainWindow {
 				DatabaseTableView tableView = new DatabaseTableView(result);
 				tableView.setAutoHeight(true);
 				tableView.addClicklistener(createDependentRowClickListener(tabPane));
-				tab.addContentComponent(tableView);
+				tab.addAllContentComponents(Arrays.asList(tableView));
 			}
 		};
 	}
@@ -176,13 +178,16 @@ public class MainWindow {
 		return new DependentDatabaseTableRowsQuery(row) {
 			@Override
 			protected void done(List<DatabaseTable> result) {
+				List<DatabaseTableView> dependentDatabaseTableViews = new ArrayList<>();
 				for (DatabaseTable dependentTables : result) {
 					DatabaseTableView databaseTableView = new DatabaseTableView(dependentTables);
 					databaseTableView.addClicklistener(createDependentRowClickListener(tab.getTabPane()));
-					databaseTableGroup.add(databaseTableView);
+					
 					// scroll parent when child cannot scroll further but parent could
 					databaseTableView.getScrollPane().addMouseWheelListener(new MouseWheelScrollListener(databaseTableView.getScrollPane()));
+					dependentDatabaseTableViews.add(databaseTableView);
 				}
+				databaseTableGroup.addAll(dependentDatabaseTableViews);
 			}
 		};
 	}

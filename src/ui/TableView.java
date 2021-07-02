@@ -15,11 +15,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.RowSorter;
 import javax.swing.RowSorter.SortKey;
+import javax.swing.SwingUtilities;
 import javax.swing.event.RowSorterEvent;
 import javax.swing.event.RowSorterListener;
-import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
@@ -285,11 +284,10 @@ public class TableView<T extends TableRow, U extends TableCell> extends JPanel {
 	}
 
 	private boolean isColumnSorted(String columnName) {
-		RowSorter<? extends TableModel> rowSorter = jTable.getRowSorter();
-		if (rowSorter == null) {
+		if (this.sorter == null) {
 			return false;
 		}
-		List<? extends SortKey> sortKeys = rowSorter.getSortKeys();
+		List<? extends SortKey> sortKeys = this.sorter.getSortKeys();
 		return sortKeys.stream().anyMatch(x -> this.table.getColumnNames().get(x.getColumn()).equalsIgnoreCase(columnName));
 	}
 }

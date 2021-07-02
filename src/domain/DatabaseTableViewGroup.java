@@ -27,9 +27,9 @@ public class DatabaseTableViewGroup implements ActionListener {
 		this.tab = tab;
 	}
 
-	public void add(DatabaseTableView databaseTableView) {
-		this.databaseTableViews.add(databaseTableView);
-		this.tab.addContentComponent(databaseTableView);
+	public void addAll(List<DatabaseTableView> databaseTableViews) {
+		this.databaseTableViews.addAll(databaseTableViews);
+		this.tab.addAllContentComponents(databaseTableViews);
 	}
 	
 	public void clear() {

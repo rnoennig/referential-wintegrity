@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.List;
 
 import javax.swing.BoxLayout;
 import javax.swing.JComponent;
@@ -39,6 +40,7 @@ public class Tab {
 		
 		this.panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+		
 		scrollPane = new JScrollPane(panel);
 		scrollPane.getHorizontalScrollBar().setUnitIncrement(4);
 		scrollPane.getVerticalScrollBar().setUnitIncrement(4);
@@ -82,8 +84,10 @@ public class Tab {
 		// intentionally empty
 	}
 
-	public void addContentComponent(JComponent component) {
-		panel.add(component);
+	public void addAllContentComponents(List<? extends JComponent> components) {
+		for (JComponent component : components) {
+			panel.add(component);
+		}
 		panel.revalidate();
 	}
 
