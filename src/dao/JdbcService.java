@@ -141,9 +141,7 @@ public class JdbcService {
 		for (DatabaseTable databaseTable : databaseTableRowsByTable.keySet()) {
 			List<DatabaseTableRow> rows = databaseTableRowsByTable.get(databaseTable);
 			for ( DatabaseTableRow row : rows) {
-//				System.out.println("Row before: " + row);
 				row.setTable(databaseTable);
-//				System.out.println("Row  after: " + row);
 			}
 			databaseTable.setData(rows);
 		}
@@ -306,14 +304,14 @@ public class JdbcService {
 	}
 	
 	public Schema readSchemaGraph() {
+		IniFile iniFile;
 		if (!new File(databaseSchemaFilePath).exists()) {
-			IniFile iniFile = readSchemaGraphFromDb();
+			iniFile = readSchemaGraphFromDb();
 			writeIniFile(iniFile);
+		} else {
+			iniFile = readIniFile(databaseSchemaFilePath);
 		}
-		// TODO provide schema file name as program argument
-		IniFile iniFileReadFromFS = readIniFile(databaseSchemaFilePath);
-		Schema schema = readSchemaFromFile(iniFileReadFromFS);
-		return schema;
+		return readSchemaFromFile(iniFile);
 	}
 	private IniFile readIniFile(String fileName) {
 		IniFile iniFile = new IniFile();
