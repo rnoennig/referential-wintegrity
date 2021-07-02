@@ -11,7 +11,7 @@ import ui.ClipboardUtil;
 import ui.DatabaseTableView;
 import ui.DependentDatabaseTableRowsQuery;
 import ui.DependentRowsTab;
-import ui.Main;
+import ui.MainWindow;
 import ui.Tab;
 
 /**
@@ -60,7 +60,7 @@ public class DatabaseTableViewGroup implements ActionListener {
 		System.out.println("Export this group as insert statements:");
 		List<String> statements = tables.stream()
 				.distinct()
-				.flatMap(t -> Main.getInstance().getJdbcProvider().toInsertStatements(t).stream())
+				.flatMap(t -> MainWindow.getInstance().getJdbcProvider().toInsertStatements(t).stream())
 				.collect(Collectors.toList());
 		String statementsAsText = statements.stream().collect(Collectors.joining("\n"));
 		ClipboardUtil.copyText(statementsAsText);
@@ -78,7 +78,7 @@ public class DatabaseTableViewGroup implements ActionListener {
 		System.out.println("Export this group as delete statements:");
 		List<String> statements = tables.stream()
 				.distinct()
-				.flatMap(t -> Main.getInstance().getJdbcProvider().toDeleteStatements(t).stream())
+				.flatMap(t -> MainWindow.getInstance().getJdbcProvider().toDeleteStatements(t).stream())
 				.collect(Collectors.toList());
 		String statementsAsText = statements.stream().collect(Collectors.joining("\n"));
 		ClipboardUtil.copyText(statementsAsText);
@@ -91,7 +91,7 @@ public class DatabaseTableViewGroup implements ActionListener {
 		List<DatabaseTable> tables = databaseTableViews.stream()
 				.map(dbtv -> dbtv.getTable())
 				.collect(Collectors.toList());
-		System.out.println("refreshing group with these tables:"+tables);
+		System.out.println("Refreshing group with these tables:"+tables);
 		this.clear();
 		executeQuery();
 	}

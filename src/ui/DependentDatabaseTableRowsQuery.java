@@ -22,7 +22,7 @@ public abstract class DependentDatabaseTableRowsQuery extends DatabaseTableQuery
 
 	protected List<DatabaseTable> doInBackground() throws Exception {
 		// TODO support more than one row as query input
-		return Main.getInstance().getJdbcProvider().getDependentRows(rows[0]);
+		return MainWindow.getInstance().getJdbcProvider().getDependentRows(rows[0]);
 	}
 
 	public void execute() {
