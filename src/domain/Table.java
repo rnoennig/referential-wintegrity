@@ -64,14 +64,15 @@ public class Table<T extends TableRow, U extends TableCell> {
 	 * @return size of the column for the longest value in all rows
 	 */
 	public int getMaxColumnSize(TextWidthCalculator textWidthCalculator, String columnName) {
-		int maxLength = 0;
+		String headerText = String.valueOf(header.get(getColumnIndex(columnName)).getValue());
+		int maxLength = textWidthCalculator.calculate(headerText);
 		for (TableRow tableRow : data) {
 			Object columnValue = tableRow.getColumnValue(columnName);
 			if (columnValue == null) {
 				continue;
 			}
 			int len = textWidthCalculator.calculate(columnValue.toString());
-			maxLength = len > maxLength ? len : maxLength; 
+			maxLength = len > maxLength ? len : maxLength;
 		}
 		return maxLength;
 	}

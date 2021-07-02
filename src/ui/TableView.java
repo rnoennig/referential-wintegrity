@@ -1,6 +1,5 @@
 package ui;
 
-import java.awt.Canvas;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
@@ -16,12 +15,18 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.RowSorter;
+import javax.swing.RowSorter.SortKey;
+import javax.swing.event.RowSorterEvent;
+import javax.swing.event.RowSorterListener;
+import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import domain.Table;
 import domain.TableCell;
@@ -39,6 +44,8 @@ public class TableView<T extends TableRow, U extends TableCell> extends JPanel {
 	private List<TableViewClickAdapter<T, U>> clickAdapters = new LinkedList<>();
 	
 	protected JTable jTable;
+	
+	protected TableRowSorter<TableModel> sorter;
 	
 	protected Table<T, U> table;
 	
@@ -142,6 +149,15 @@ public class TableView<T extends TableRow, U extends TableCell> extends JPanel {
 		Dimension d = new Dimension(cols, rows);
 		jTable.setPreferredScrollableViewportSize(d);
 		
+		sorter = new TableRowSorter<TableModel>(dm);
+		this.jTable.setRowSorter(sorter);
+		sorter.addRowSorterListener(new RowSorterListener() {
+			@Override
+			public void sorterChanged(RowSorterEvent e) {
+				TableView.this.resizeColumnsToFitContent(true);
+			}
+		});
+		
 		scrollPane = new JScrollPane(jTable) {
 			private static final long serialVersionUID = 1L;
 
@@ -175,16 +191,13 @@ public class TableView<T extends TableRow, U extends TableCell> extends JPanel {
 		this.add(comp);
 	}
 
-	private void resizeColumnsToFitContent(boolean includeHeader) {
+	public void resizeColumnsToFitContent(boolean includeHeader) {
 		TableColumnModel columnModel = jTable.getColumnModel();
 		Iterator<TableColumn> it = columnModel.getColumns().asIterator();
-		while(it.hasNext() && !autoWidth) {
+		while (it.hasNext() && !autoWidth) {
 			TableColumn col = it.next();
 			String columnName = col.getHeaderValue().toString();
-			Canvas c = new Canvas();
-			FontMetrics metrics = c.getFontMetrics(getFont());
-			int colCharLength = this.table.getMaxColumnSize(x -> metrics.stringWidth(x), columnName);
-			int preferredWidth = Math.max(colCharLength, metrics.stringWidth(columnName));
+			int preferredWidth = this.getMaxColumnSize(columnName);
 			col.setPreferredWidth(preferredWidth);
 			col.setMinWidth(preferredWidth);
 		}
@@ -256,11 +269,27 @@ public class TableView<T extends TableRow, U extends TableCell> extends JPanel {
 		int height = tableMaxSize.height;
 		int width = tableMaxSize.width;
 				
-		if (TableView.this.tableNameVisible) {
+		if (this.tableNameVisible) {
 			height += TableView.this.tableNameLabel.getPreferredSize().height;
 		}
 		
 		height += 10;
 		return new Dimension(width, height);
+	}
+
+	public int getMaxColumnSize(String columnName) {
+		FontMetrics metrics = jTable.getFontMetrics(jTable.getFont());
+		int additionalPadding = 4;
+		int additionalPaddingWhenSorted = isColumnSorted(columnName) ? 10 : 0;
+		return table.getMaxColumnSize(x -> SwingUtilities.computeStringWidth(metrics, x) + additionalPadding + additionalPaddingWhenSorted, columnName);
+	}
+
+	private boolean isColumnSorted(String columnName) {
+		RowSorter<? extends TableModel> rowSorter = jTable.getRowSorter();
+		if (rowSorter == null) {
+			return false;
+		}
+		List<? extends SortKey> sortKeys = rowSorter.getSortKeys();
+		return sortKeys.stream().anyMatch(x -> this.table.getColumnNames().get(x.getColumn()).equalsIgnoreCase(columnName));
 	}
 }

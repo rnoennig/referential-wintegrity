@@ -11,8 +11,6 @@ import javax.swing.JLabel;
 import javax.swing.RowSorter;
 import javax.swing.SortOrder;
 import javax.swing.UIManager;
-import javax.swing.table.TableModel;
-import javax.swing.table.TableRowSorter;
 
 import domain.DatabaseTable;
 import domain.DatabaseTableCell;
@@ -29,14 +27,6 @@ public class DatabaseTableView extends TableView<DatabaseTableRow, DatabaseTable
 
 	public DatabaseTableView(DatabaseTable table) {
 		super(table, false, true, true);
-		TableModel model = this.jTable.getModel();
-		TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>(model) {
-			@Override
-			public int getViewRowCount() {
-				return super.getViewRowCount();
-			}
-		};
-		this.jTable.setRowSorter(sorter);
 
 		TableDefinition tableDefinition = table.getTableDefinition();
 		if (tableDefinition.getPrimaryKey().isPresent()) {
@@ -44,7 +34,7 @@ public class DatabaseTableView extends TableView<DatabaseTableRow, DatabaseTable
 			for (Integer pkIndex : tableDefinition.getPrimaryKeyColumnIndexes()) {
 				sortKeys.add(new RowSorter.SortKey(pkIndex.intValue(), SortOrder.ASCENDING));
 			}
-			sorter.setSortKeys(sortKeys);
+			this.sorter.setSortKeys(sortKeys);
 		}
 	}
 	
