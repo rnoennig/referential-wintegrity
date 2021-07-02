@@ -44,7 +44,6 @@ public class Tab {
 		scrollPane.getVerticalScrollBar().setUnitIncrement(4);
 
 		this.tabPane.addTab(this.title, scrollPane);
-		this.tabPane.setTabComponentAt(tabPane.indexOfComponent(scrollPane), this.tabTitleLabel);
 		this.tabTitleLabel = new JLabel(this.title);
 		this.tabTitleLabel.setBackground(new Color(0,0,0,0));
 		this.tabTitleLabel.addMouseListener(new MouseAdapter() {
@@ -53,6 +52,7 @@ public class Tab {
 				tabPane.setSelectedIndex(tabPane.indexOfComponent(scrollPane));
 			}
 		});
+		this.tabPane.setTabComponentAt(tabPane.indexOfComponent(scrollPane), this.tabTitleLabel);
 
 		menu = new JPopupMenu();
 		
