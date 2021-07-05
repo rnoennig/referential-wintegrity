@@ -25,8 +25,8 @@ import domain.ri.TableDefinition;
 public class DatabaseTableView extends TableView<DatabaseTableRow, DatabaseTableCell> {
 	private static final long serialVersionUID = 1L;
 
-	public DatabaseTableView(DatabaseTable table) {
-		super(table, false, true, true);
+	public DatabaseTableView(DatabaseTable table, boolean tableNameVisible) {
+		super(table, false, tableNameVisible, true);
 
 		TableDefinition tableDefinition = table.getTableDefinition();
 		if (tableDefinition.getPrimaryKey().isPresent()) {

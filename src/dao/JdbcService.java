@@ -313,6 +313,13 @@ public class JdbcService {
 		}
 		return readSchemaFromFile(iniFile);
 	}
+	
+	public Schema reloadSchemaGraph() {
+		IniFile iniFile = readSchemaGraphFromDb();
+		writeIniFile(iniFile);
+		return readSchemaFromFile(iniFile);
+	}
+	
 	private IniFile readIniFile(String fileName) {
 		IniFile iniFile = new IniFile();
 		try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {

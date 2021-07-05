@@ -1,6 +1,8 @@
 package ui;
 
 import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -8,6 +10,9 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JSplitPane;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
@@ -34,6 +39,8 @@ public class MainWindow {
 
 	private JSplitPane eastWestPanel;
 
+	private JFrame frame;
+
 	public JdbcService getJdbcProvider() {
 		return jdbcProvider;
 	}
@@ -55,12 +62,14 @@ public class MainWindow {
 		UIManager.put("Table.showHorizontalLines", true);
 		UIManager.put("Table.showVerticalLines", true);
 		UIManager.put("Table.alternateRowColor", new Color(78, 83, 84));
-		JFrame frame = new JFrame("Referential Wintegrity");
+		frame = new JFrame("Referential Wintegrity");
 
 		frame.setSize(800, 600);
 		frame.setLocationRelativeTo(null);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+		createMainMenu();
+		
 		eastWestPanel = new JSplitPane();
 		eastWestPanel.setDividerSize(3);
 		frame.add(eastWestPanel);
@@ -73,16 +82,44 @@ public class MainWindow {
 		eastWestPanel.setLeftComponent(null);
 		eastWestPanel.setRightComponent(queryResultTabPane);
 		
+		loadSchema(false);
+		
+		frame.setVisible(true);
+	}
+
+	private void loadSchema(boolean reload) {
 		SwingWorker<Schema, Void> swingWorker = new SwingWorker<Schema, Void>() {
 
 			@Override
 			protected Schema doInBackground() throws Exception {
+				if (reload) {
+					return MainWindow.this.jdbcProvider.reloadSchemaGraph();
+				}
 				return MainWindow.this.jdbcProvider.readSchemaGraph();
+			}
+			
+			@Override
+			protected void done() {
+				createTableSelectionView();
 			}
 		};
 		swingWorker.execute();
-		
-		frame.setVisible(true);
+	}
+
+	private void createMainMenu() {
+		JMenuBar menuBar = new JMenuBar();
+		JMenu connectionMenu = new JMenu("Connection");
+		JMenuItem reloadSchemaMenuItem = new JMenuItem("Reload database schema");
+		reloadSchemaMenuItem.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				loadSchema(true);
+			}
+		});
+		connectionMenu.add(reloadSchemaMenuItem);
+		menuBar.add(connectionMenu);
+		frame.setJMenuBar(menuBar);
 	}
 
 	/**
@@ -138,7 +175,7 @@ public class MainWindow {
 			@Override
 			protected void done(DatabaseTable result) {
 				tab.clear();
-				DatabaseTableView tableView = new DatabaseTableView(result);
+				DatabaseTableView tableView = new DatabaseTableView(result, false);
 				tableView.setAutoHeight(true);
 				tableView.addClicklistener(createDependentRowClickListener());
 				tab.addAllContentComponents(Arrays.asList(tableView));
@@ -178,7 +215,7 @@ public class MainWindow {
 			protected void done(List<DatabaseTable> result) {
 				List<DatabaseTableView> dependentDatabaseTableViews = new ArrayList<>();
 				for (DatabaseTable dependentTables : result) {
-					DatabaseTableView databaseTableView = new DatabaseTableView(dependentTables);
+					DatabaseTableView databaseTableView = new DatabaseTableView(dependentTables, true);
 					databaseTableView.addClicklistener(createDependentRowClickListener());
 					dependentDatabaseTableViews.add(databaseTableView);
 				}
