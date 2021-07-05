@@ -4,7 +4,6 @@ import java.awt.event.ActionListener;
 import java.util.List;
 
 import javax.swing.JMenuItem;
-import javax.swing.JTabbedPane;
 
 import domain.DatabaseTable;
 import domain.DatabaseTableViewGroup;
@@ -22,7 +21,7 @@ public class DependentRowsTab extends QueryResultTab<List<DatabaseTable>> {
 	private JMenuItem exportInsertMenuItem;
 	private JMenuItem exportDeleteMenuItem;
 
-	public DependentRowsTab(JTabbedPane tabPane, String title) {
+	public DependentRowsTab(QueryResultTabbedPane tabPane, String title) {
 		super(tabPane, title);
 
 		exportInsertMenuItem = new JMenuItem("Export as INSERT statements");

@@ -7,6 +7,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -14,7 +16,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 
 /**
  * 
@@ -24,7 +25,7 @@ import javax.swing.JTabbedPane;
 public class Tab {
 
 	protected String title;
-	protected JTabbedPane tabPane;
+	protected QueryResultTabbedPane tabPane;
 	protected JLabel tabTitleLabel;
 	protected JPanel panel;
 	protected JScrollPane scrollPane;
@@ -34,7 +35,7 @@ public class Tab {
 	
 	public static final String COMMAND_CLOSE = "close";
 	
-	public Tab(JTabbedPane tabPane, String title) {
+	public Tab(QueryResultTabbedPane tabPane, String title) {
 		this.tabPane = tabPane;
 		this.title = title;
 		
@@ -55,25 +56,28 @@ public class Tab {
 			}
 		});
 		this.tabPane.setTabComponentAt(tabPane.indexOfComponent(scrollPane), this.tabTitleLabel);
+		tabPane.addTab(scrollPane, this);
 
 		menu = new JPopupMenu();
 		
 		closeMenuItem = new JMenuItem("Close");
 		closeMenuItem.setActionCommand(COMMAND_CLOSE);
-		closeMenuItem.addActionListener(new ActionListener() {
+		Action closeCommand = new AbstractAction("Close") {
+			private static final long serialVersionUID = 1L;
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				onClose();
 			}
-		}); 
+		};
+		closeMenuItem.addActionListener(closeCommand);
 		menu.add(closeMenuItem);
 		
 		this.tabTitleLabel.setComponentPopupMenu(menu);
 	}
 	
 	protected void onClose() {
-		int indexOfTabComponent = this.tabPane.indexOfComponent(this.scrollPane);
-		this.tabPane.removeTabAt(indexOfTabComponent);
+		close();
 	}
 
 	/**
@@ -100,7 +104,7 @@ public class Tab {
 		return tabPane.getSelectedComponent() == this.scrollPane;
 	}
 
-	public JTabbedPane getTabPane() {
+	public QueryResultTabbedPane getTabPane() {
 		return tabPane;
 	}
 
@@ -113,5 +117,10 @@ public class Tab {
 	 */
 	public void select() {
 		this.tabPane.setSelectedComponent(this.scrollPane);
+	}
+
+	public void close() {
+		int indexOfTabComponent = this.tabPane.indexOfComponent(this.scrollPane);
+		this.tabPane.removeTabAt(indexOfTabComponent);
 	}
 }

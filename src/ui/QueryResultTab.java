@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JMenuItem;
-import javax.swing.JTabbedPane;
 
 import domain.DatabaseTableViewGroup;
 
@@ -22,7 +21,7 @@ public class QueryResultTab<T> extends Tab {
 	
 	protected DatabaseTableQuery<T> query;
 
-	public QueryResultTab(JTabbedPane tabPane, String title) {
+	public QueryResultTab(QueryResultTabbedPane tabPane, String title) {
 		super(tabPane, title);
 		
 		refreshMenuItem = new JMenuItem("Refresh");

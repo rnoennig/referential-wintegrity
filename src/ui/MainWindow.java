@@ -8,7 +8,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.swing.JFrame;
 import javax.swing.JSplitPane;
-import javax.swing.JTabbedPane;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 
@@ -29,6 +28,8 @@ public class MainWindow {
 	private static MainWindow main;
 
 	private JdbcService jdbcProvider;
+
+	private QueryResultTabbedPane queryResultTabPane;
 
 	public JdbcService getJdbcProvider() {
 		return jdbcProvider;
@@ -61,14 +62,14 @@ public class MainWindow {
 		eastWestPanel.setDividerSize(3);
 		frame.add(eastWestPanel);
 
-		JTabbedPane tabPane = new JTabbedPane();
+		queryResultTabPane = new QueryResultTabbedPane();
 
-		createTableSelectionView(tabPane, eastWestPanel);
+		createTableSelectionView(queryResultTabPane, eastWestPanel);
 
 		// setting left component to null prevents a button from being displayed
 		eastWestPanel.setLeftComponent(null);
-		eastWestPanel.setRightComponent(tabPane);
-
+		eastWestPanel.setRightComponent(queryResultTabPane);
+		
 		SwingWorker<Schema, Void> swingWorker = new SwingWorker<Schema, Void>() {
 
 			@Override
@@ -77,7 +78,7 @@ public class MainWindow {
 			}
 		};
 		swingWorker.execute();
-
+		
 		frame.setVisible(true);
 	}
 
@@ -87,7 +88,7 @@ public class MainWindow {
 	 * @param eastWestPanel
 	 * @return a view with all tables
 	 */
-	protected void createTableSelectionView(JTabbedPane tabPane, JSplitPane eastWestPanel) {
+	protected void createTableSelectionView(QueryResultTabbedPane tabPane, JSplitPane eastWestPanel) {
 		SwingWorker<Table<TableRow, TableCell>, Void> swingWorker = new SwingWorker<>() {
 			@Override
 			protected Table<TableRow, TableCell> doInBackground() throws Exception {
@@ -122,7 +123,7 @@ public class MainWindow {
 	 * @param tab
 	 * @return
 	 */
-	protected DatabaseTableQuery<DatabaseTable> createQueryForFetchingAllsTableRows(JTabbedPane tabPane, String tableName,
+	protected DatabaseTableQuery<DatabaseTable> createQueryForFetchingAllsTableRows(QueryResultTabbedPane tabPane, String tableName,
 			QueryResultTab<DatabaseTable> tab) {
 		return new DatabaseTableQuery<>() {
 			
@@ -142,7 +143,7 @@ public class MainWindow {
 		};
 	}
 	
-	protected TableViewClickAdapter<DatabaseTableRow, DatabaseTableCell> createDependentRowClickListener(JTabbedPane tabPane) {
+	protected TableViewClickAdapter<DatabaseTableRow, DatabaseTableCell> createDependentRowClickListener(QueryResultTabbedPane tabPane) {
 		return new TableViewClickAdapter<DatabaseTableRow, DatabaseTableCell>() {
 			@Override
 			public void cellSelected(DatabaseTableRow row, DatabaseTableCell cell) {
@@ -192,7 +193,7 @@ public class MainWindow {
 		};
 	}
 
-	private TableViewClickAdapter<TableRow, TableCell> createOnTableClickAdapter(JTabbedPane tabPane) {
+	private TableViewClickAdapter<TableRow, TableCell> createOnTableClickAdapter(QueryResultTabbedPane tabPane) {
 		return new TableViewClickAdapter<TableRow, TableCell>() {
 			@Override
 			public void cellSelected(TableRow row, TableCell cell) {
