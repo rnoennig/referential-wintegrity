@@ -3,6 +3,8 @@ package ui;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Iterator;
@@ -11,12 +13,14 @@ import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.RowSorter.SortKey;
 import javax.swing.SwingUtilities;
+import javax.swing.TransferHandler;
 import javax.swing.event.RowSorterEvent;
 import javax.swing.event.RowSorterListener;
 import javax.swing.table.AbstractTableModel;
@@ -108,6 +112,7 @@ public class TableView<T extends TableRow, U extends TableCell> extends JPanel {
 		};
 
 		jTable = new JTable(dm);
+		jTable.setCellSelectionEnabled(true);
 		jTable.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
@@ -126,6 +131,48 @@ public class TableView<T extends TableRow, U extends TableCell> extends JPanel {
 				}
 			}
 		});
+		// TODO custom implementation not necessary atm
+		jTable.setTransferHandler(new TransferHandler() {
+			private static final long serialVersionUID = 1L;
+			
+			@Override
+			public int getSourceActions(JComponent c) {
+				return TransferHandler.COPY;
+			}
+			
+			@Override
+			protected Transferable createTransferable(JComponent c) {
+				if (c instanceof JTable) {
+	                JTable table = (JTable) c;
+	                int[] rows = table.getSelectedRows();
+	                int[] cols = table.getSelectedColumns();
+
+	                if (rows == null || cols == null || rows.length == 0 || cols.length == 0) {
+	                    return null;
+	                }
+
+	                StringBuilder plainStr = new StringBuilder();
+
+	                for (int row = 0; row < rows.length; row++) {
+	                    for (int col = 0; col < cols.length; col++) {
+	                        Object obj = table.getValueAt(rows[row], cols[col]);
+	                        String val = ((obj == null) ? "" : obj.toString());
+	                        plainStr.append(val).append('\t');
+	                    }
+	                    // we want a newline at the end of each line and not a tab
+	                    plainStr.deleteCharAt(plainStr.length() - 1).append('\n');
+	                }
+
+	                // remove the last newline
+	                plainStr.deleteCharAt(plainStr.length() - 1);
+
+	                return new StringSelection(plainStr.toString());
+	            }
+
+	            return null;
+			}
+		});
+//		jTable.setTransferHandler(getTransferHandler());
 		
 		jTable.getTableHeader().setDefaultRenderer(
 				createStylePresevingCellRenderer(jTable.getTableHeader().getDefaultRenderer()));

@@ -53,6 +53,9 @@ public class TableCell {
 			return false;
 		return true;
 	}
-	
-	
+
+	@Override
+	public String toString() {
+		return String.valueOf(value);
+	}
 }
