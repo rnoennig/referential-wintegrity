@@ -3,6 +3,7 @@ package ui;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -141,6 +142,7 @@ public class MainWindow {
 				tableView.setAutoHeight(true);
 				tableView.addClicklistener(createDependentRowClickListener());
 				tab.addAllContentComponents(Arrays.asList(tableView));
+				tab.setTabTooltip(new Date().toString());
 			}
 		};
 	}
@@ -182,6 +184,7 @@ public class MainWindow {
 				}
 				databaseTableGroup.clear();
 				databaseTableGroup.addAll(dependentDatabaseTableViews);
+				tab.setTabTooltip(new Date().toString());
 			}
 		};
 	}

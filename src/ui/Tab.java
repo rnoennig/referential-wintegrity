@@ -123,4 +123,8 @@ public class Tab {
 		int indexOfTabComponent = this.tabPane.indexOfComponent(this.scrollPane);
 		this.tabPane.removeTabAt(indexOfTabComponent);
 	}
+
+	public void setTabTooltip(String text) {
+		this.tabTitleLabel.setToolTipText(text);
+	}
 }
