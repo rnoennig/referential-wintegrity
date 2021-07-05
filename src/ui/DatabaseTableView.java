@@ -36,6 +36,9 @@ public class DatabaseTableView extends TableView<DatabaseTableRow, DatabaseTable
 			}
 			this.sorter.setSortKeys(sortKeys);
 		}
+		
+		// scroll parent when child cannot scroll further but parent could
+		addScrollPaneMouseWheelListener();
 	}
 	
 	public DatabaseTable getTable() {
@@ -71,5 +74,9 @@ public class DatabaseTableView extends TableView<DatabaseTableRow, DatabaseTable
 		}
 		
 		return super.renderCellType(cellValue);
+	}
+
+	public void addScrollPaneMouseWheelListener() {
+		this.scrollPane.addMouseWheelListener(new MouseWheelScrollListener(scrollPane));
 	}
 }

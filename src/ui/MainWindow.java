@@ -31,6 +31,8 @@ public class MainWindow {
 
 	private QueryResultTabbedPane queryResultTabPane;
 
+	private JSplitPane eastWestPanel;
+
 	public JdbcService getJdbcProvider() {
 		return jdbcProvider;
 	}
@@ -58,13 +60,13 @@ public class MainWindow {
 		frame.setLocationRelativeTo(null);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		JSplitPane eastWestPanel = new JSplitPane();
+		eastWestPanel = new JSplitPane();
 		eastWestPanel.setDividerSize(3);
 		frame.add(eastWestPanel);
 
 		queryResultTabPane = new QueryResultTabbedPane();
 
-		createTableSelectionView(queryResultTabPane, eastWestPanel);
+		createTableSelectionView();
 
 		// setting left component to null prevents a button from being displayed
 		eastWestPanel.setLeftComponent(null);
@@ -88,7 +90,7 @@ public class MainWindow {
 	 * @param eastWestPanel
 	 * @return a view with all tables
 	 */
-	protected void createTableSelectionView(QueryResultTabbedPane tabPane, JSplitPane eastWestPanel) {
+	private void createTableSelectionView() {
 		SwingWorker<Table<TableRow, TableCell>, Void> swingWorker = new SwingWorker<>() {
 			@Override
 			protected Table<TableRow, TableCell> doInBackground() throws Exception {
@@ -101,7 +103,7 @@ public class MainWindow {
 					Table<TableRow, TableCell> table = get();
 					TableView<TableRow, TableCell> allTablesView = new TableView<>(table, true, false, false);
 					allTablesView.setAutoHeight(true);
-					allTablesView.addClicklistener(createOnTableClickAdapter(tabPane));
+					allTablesView.addClicklistener(createOnTableClickAdapter(queryResultTabPane));
 					eastWestPanel.setLeftComponent(allTablesView);
 					
 					int maxWidthNeeded = allTablesView.getMaxColumnSize(table.getColumnNames().get(0));
@@ -123,7 +125,7 @@ public class MainWindow {
 	 * @param tab
 	 * @return
 	 */
-	protected DatabaseTableQuery<DatabaseTable> createQueryForFetchingAllsTableRows(QueryResultTabbedPane tabPane, String tableName,
+	private DatabaseTableQuery<DatabaseTable> createQueryForFetchingAllsTableRows(QueryResultTabbedPane tabPane, String tableName,
 			QueryResultTab<DatabaseTable> tab) {
 		return new DatabaseTableQuery<>() {
 			
@@ -137,13 +139,13 @@ public class MainWindow {
 				tab.clear();
 				DatabaseTableView tableView = new DatabaseTableView(result);
 				tableView.setAutoHeight(true);
-				tableView.addClicklistener(createDependentRowClickListener(tabPane));
+				tableView.addClicklistener(createDependentRowClickListener());
 				tab.addAllContentComponents(Arrays.asList(tableView));
 			}
 		};
 	}
 	
-	protected TableViewClickAdapter<DatabaseTableRow, DatabaseTableCell> createDependentRowClickListener(QueryResultTabbedPane tabPane) {
+	private TableViewClickAdapter<DatabaseTableRow, DatabaseTableCell> createDependentRowClickListener() {
 		return new TableViewClickAdapter<DatabaseTableRow, DatabaseTableCell>() {
 			@Override
 			public void cellSelected(DatabaseTableRow row, DatabaseTableCell cell) {
@@ -153,7 +155,7 @@ public class MainWindow {
 					return;
 				}
 				String tabTitle = row.getUniqueDescription();
-				DependentRowsTab dependentRowsTab = new DependentRowsTab(tabPane, tabTitle);
+				DependentRowsTab dependentRowsTab = new DependentRowsTab(queryResultTabPane, tabTitle);
 				DatabaseTableViewGroup databaseTableGroup = createDependentRowsTableGroup(dependentRowsTab, row);
 				databaseTableGroup.executeQuery();
 				dependentRowsTab.select();
@@ -161,12 +163,7 @@ public class MainWindow {
 		};
 	}
 
-	/**
-	 * 
-	 * @param tab
-	 * @param row
-	 */
-	protected DatabaseTableViewGroup createDependentRowsTableGroup(Tab tab, DatabaseTableRow row) {
+	private DatabaseTableViewGroup createDependentRowsTableGroup(Tab tab, DatabaseTableRow row) {
 		DatabaseTableViewGroup databaseTableGroup = new DatabaseTableViewGroup(tab);
 		DependentDatabaseTableRowsQuery dependentRowsQuery = createQueryForDependentTableRows(tab, row, databaseTableGroup);
 		databaseTableGroup.setDependentRowsQuery(dependentRowsQuery);
@@ -182,10 +179,7 @@ public class MainWindow {
 				List<DatabaseTableView> dependentDatabaseTableViews = new ArrayList<>();
 				for (DatabaseTable dependentTables : result) {
 					DatabaseTableView databaseTableView = new DatabaseTableView(dependentTables);
-					databaseTableView.addClicklistener(createDependentRowClickListener(tab.getTabPane()));
-					
-					// scroll parent when child cannot scroll further but parent could
-					databaseTableView.getScrollPane().addMouseWheelListener(new MouseWheelScrollListener(databaseTableView.getScrollPane()));
+					databaseTableView.addClicklistener(createDependentRowClickListener());
 					dependentDatabaseTableViews.add(databaseTableView);
 				}
 				databaseTableGroup.addAll(dependentDatabaseTableViews);

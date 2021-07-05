@@ -52,7 +52,7 @@ public class TableView<T extends TableRow, U extends TableCell> extends JPanel {
 
 	private boolean autoHeight;
 
-	private JScrollPane scrollPane;
+	protected JScrollPane scrollPane;
 
 	private boolean tableHeaderVisible = true;
 
