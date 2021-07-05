@@ -156,21 +156,19 @@ public class MainWindow {
 				}
 				String tabTitle = row.getUniqueDescription();
 				DependentRowsTab dependentRowsTab = new DependentRowsTab(queryResultTabPane, tabTitle);
-				DatabaseTableViewGroup databaseTableGroup = createDependentRowsTableGroup(dependentRowsTab, row);
-				databaseTableGroup.executeQuery();
+				
+				DatabaseTableViewGroup databaseTableGroup = new DatabaseTableViewGroup(dependentRowsTab);
+				DependentDatabaseTableRowsQuery dependentRowsQuery = createQueryForDependentTableRows(dependentRowsTab, row, databaseTableGroup);
+
+				dependentRowsTab.addActionListener(databaseTableGroup);
+				dependentRowsTab.setQuery(dependentRowsQuery);
+				
+				dependentRowsQuery.execute();
 				dependentRowsTab.select();
 			}
 		};
 	}
-
-	private DatabaseTableViewGroup createDependentRowsTableGroup(Tab tab, DatabaseTableRow row) {
-		DatabaseTableViewGroup databaseTableGroup = new DatabaseTableViewGroup(tab);
-		DependentDatabaseTableRowsQuery dependentRowsQuery = createQueryForDependentTableRows(tab, row, databaseTableGroup);
-		databaseTableGroup.setDependentRowsQuery(dependentRowsQuery);
-		tab.addActionListener(databaseTableGroup);
-		return databaseTableGroup;
-	}
-
+	
 	private DependentDatabaseTableRowsQuery createQueryForDependentTableRows(Tab tab, DatabaseTableRow row,
 			DatabaseTableViewGroup databaseTableGroup) {
 		return new DependentDatabaseTableRowsQuery(row) {
@@ -182,6 +180,7 @@ public class MainWindow {
 					databaseTableView.addClicklistener(createDependentRowClickListener());
 					dependentDatabaseTableViews.add(databaseTableView);
 				}
+				databaseTableGroup.clear();
 				databaseTableGroup.addAll(dependentDatabaseTableViews);
 			}
 		};

@@ -14,6 +14,9 @@ import javax.swing.JComponent;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
 
+/**
+ * Composition of all {@link QueryResultTab}s
+ */
 public class QueryResultTabbedPane extends JTabbedPane {
 	private static final long serialVersionUID = 1L;
 	private Map<Component, Tab> tabs;
@@ -22,6 +25,7 @@ public class QueryResultTabbedPane extends JTabbedPane {
 		tabs = new HashMap<>();
 		
 		registerCloseActionKeyStroke();
+		registerRefreshActionKeyStroke();
 	}
 
 	private void registerCloseActionKeyStroke() {
@@ -39,6 +43,26 @@ public class QueryResultTabbedPane extends JTabbedPane {
 			}
 		};
 		getActionMap().put(Tab.COMMAND_CLOSE, closeCommand);
+	}
+	
+	private void registerRefreshActionKeyStroke() {
+		KeyStroke keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_R, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx());
+		getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(keyStroke, QueryResultTab.COMMAND_REFRESH);
+		Action closeCommand = new AbstractAction("Refresh") {
+			private static final long serialVersionUID = 1L;
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Optional<Tab> maybeTab = getActiveTab();
+				if (maybeTab.isPresent()) {
+					Tab tab = maybeTab.get();
+					if (tab instanceof QueryResultTab) {
+						((QueryResultTab<?>)tab).refresh();
+					}
+				}
+			}
+		};
+		getActionMap().put(QueryResultTab.COMMAND_REFRESH, closeCommand);
 	}
 
 	public Optional<Tab> getActiveTab() {

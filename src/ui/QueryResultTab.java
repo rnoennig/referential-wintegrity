@@ -35,7 +35,7 @@ public class QueryResultTab<T> extends Tab {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				query.execute();
+				refresh();
 			}
 		});
 	}
@@ -47,6 +47,10 @@ public class QueryResultTab<T> extends Tab {
 	public void addActionListener(ActionListener listener) {
 		super.addActionListener(listener);
 		refreshMenuItem.addActionListener(listener);
+	}
+
+	public void refresh() {
+		query.execute();
 	}
 	
 }

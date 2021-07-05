@@ -12,7 +12,6 @@ import ui.DatabaseTableView;
 import ui.DependentDatabaseTableRowsQuery;
 import ui.DependentRowsTab;
 import ui.MainWindow;
-import ui.Tab;
 
 /**
  * Groups together {@link DatabaseTableView}s that belong to a result of a {@link DependentDatabaseTableRowsQuery}
@@ -20,10 +19,9 @@ import ui.Tab;
  */
 public class DatabaseTableViewGroup implements ActionListener {
 	private List<DatabaseTableView> databaseTableViews = new ArrayList<>();
-	private DependentDatabaseTableRowsQuery dependentRowsQuery;
-	private Tab tab;
+	private DependentRowsTab tab;
 	
-	public DatabaseTableViewGroup(Tab tab) {
+	public DatabaseTableViewGroup(DependentRowsTab tab) {
 		this.tab = tab;
 	}
 
@@ -49,7 +47,7 @@ public class DatabaseTableViewGroup implements ActionListener {
 			exportTablesAsDeleteStatements();
 		}
 		if (e.getActionCommand().equals(DependentRowsTab.COMMAND_REFRESH)) {
-			refreshResults();
+			this.tab.refresh();
 		}
 	}
 
@@ -85,23 +83,6 @@ public class DatabaseTableViewGroup implements ActionListener {
 		for (String stmt : statements) {
 			System.out.println(stmt);
 		}
-	}
-
-	private void refreshResults() {
-		List<DatabaseTable> tables = databaseTableViews.stream()
-				.map(dbtv -> dbtv.getTable())
-				.collect(Collectors.toList());
-		System.out.println("Refreshing group with these tables:"+tables);
-		this.clear();
-		executeQuery();
-	}
-
-	public void executeQuery() {
-		this.dependentRowsQuery.execute();
-	}
-
-	public void setDependentRowsQuery(DependentDatabaseTableRowsQuery dependentRowsQuery) {
-		this.dependentRowsQuery = dependentRowsQuery;
 	}
 	
 }
